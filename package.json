@@ -1,0 +1,13 @@
+{
+  "name": "coupon-dungeon-collector",
+  "version": "1.0.0",
+  "description": "쿠폰던전 자동수집기",
+  "main": "collector.js",
+  "scripts": {
+    "collect": "node collector.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "firebase-admin": "^12.0.0"
+  }
+}
