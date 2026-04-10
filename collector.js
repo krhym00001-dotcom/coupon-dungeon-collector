@@ -38,7 +38,7 @@ async function collectCoupons(game) {
   try {
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
+      max_tokens: 500,
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       messages: [{
         role: 'user',
@@ -114,7 +114,7 @@ async function main() {
       total += coupons.length;
     }
     // API 과부하 방지 (2초 대기)
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 10000));
   }
 
   console.log(`\n✅ 완료! 총 ${total}개 쿠폰 수집/업데이트`);
