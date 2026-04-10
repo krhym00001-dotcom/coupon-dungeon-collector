@@ -114,7 +114,7 @@ async function main() {
       total += coupons.length;
     }
     // API 과부하 방지 (2초 대기)
-    await new Promise(r => setTimeout(r, 10000));
+    await new Promise(r => setTimeout(r, 60000));
   }
 
   console.log(`\n✅ 완료! 총 ${total}개 쿠폰 수집/업데이트`);
