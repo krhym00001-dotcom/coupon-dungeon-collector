@@ -71,6 +71,38 @@ const GAMES = [
     search: `에픽세븐 쿠폰코드 ${YEAR}`
   },
 
+  // ── 외산이지만 국내 인기 게임 (공식 페이지 있음) ──────
+  {
+    name: '원신', dev: 'HoYoverse', genre: 'rpg', tier: 'official',
+    officialUrl: 'https://genshin.hoyoverse.com/ko/gift',
+    search: `원신 쿠폰코드 ${YEAR}`
+  },
+  {
+    name: '붕괴: 스타레일', dev: 'HoYoverse', genre: 'rpg', tier: 'official',
+    officialUrl: 'https://hsr.hoyoverse.com/gift',
+    search: `붕괴 스타레일 쿠폰 ${YEAR}`
+  },
+  {
+    name: '젠레스 존 제로', dev: 'HoYoverse', genre: 'rpg', tier: 'official',
+    officialUrl: 'https://zzz.hoyoverse.com/gift',
+    search: `젠레스 존 제로 쿠폰 ${YEAR}`
+  },
+  {
+    name: '브롤스타즈', dev: 'Supercell', genre: 'casual', tier: 'search',
+    officialUrl: null,
+    search: `브롤스타즈 코드 ${YEAR}`
+  },
+  {
+    name: '클래시 오브 클랜', dev: 'Supercell', genre: 'strategy', tier: 'search',
+    officialUrl: null,
+    search: `클래시오브클랜 코드 ${YEAR}`
+  },
+  {
+    name: '클래시 로얄', dev: 'Supercell', genre: 'strategy', tier: 'search',
+    officialUrl: null,
+    search: `클래시로얄 코드 ${YEAR}`
+  },
+
   // ── 웹검색으로 수집 ──────────────────────────────────
   {
     name: '로스트아크', dev: 'Smilegate', genre: 'rpg', tier: 'search',
