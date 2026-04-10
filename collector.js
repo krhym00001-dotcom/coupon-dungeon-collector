@@ -1,4 +1,4 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const https = require('https');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 
@@ -7,328 +7,369 @@ const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 
-// Claude API 초기화
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-// 현재 연도 자동 감지
+/* ═══════════════════════════════════════════════════════
+   설정
+═══════════════════════════════════════════════════════ */
+const BLUESTACKS_BASE = 'https://www.bluestacks.com';
+const TOTAL_PAGES = 11;
+const DELAY_MS = 1500;
 const YEAR = new Date().getFullYear();
 
+// 국내 인기 게임 순위 (구글플레이 매출 기반)
+const GAME_RANK = {
+  '리니지M': 1, '리니지W': 2, '리니지2M': 3,
+  '오딘: 발할라 라이징': 4, '로스트아크': 5,
+  '메이플스토리M': 6, '던전앤파이터M': 7,
+  '블루 아카이브': 8, '에픽세븐': 9,
+  '검은사막 모바일': 10, '나이트 크로우': 11,
+  '쿠키런: 킹덤': 12, '마비노기 모바일': 13,
+  '아이온2': 14, '원신': 15,
+  '붕괴: 스타레일': 16, '젠레스 존 제로': 17,
+  '나 혼자만 레벨업: ARISE': 18,
+  '트릭컬 RE:VIVE': 19, '명조: 워더링 웨이브': 20,
+  '배틀그라운드 모바일': 21,
+  '라그나로크 오리진': 22, '라그나로크 오리진 클래식': 23,
+  '브롤스타즈': 24, '클래시 오브 클랜': 25,
+  '포켓몬 카드 게임 Pocket': 26,
+};
+
 /* ═══════════════════════════════════════════════════════
-   국내 게임 1차 풀 — 공식 페이지 우선 / 웹검색 보조
-   tier: 'official' = 공식 쿠폰 페이지 URL 직접 수집
-         'search'   = 웹검색으로 수집
+   유틸: HTTP fetch (외부 패키지 없음 — node 내장만 사용)
 ═══════════════════════════════════════════════════════ */
-const GAMES = [
-  // ── 공식 쿠폰 페이지 있는 게임 ──────────────────────
-  {
-    name: '리니지M', dev: 'NCSOFT', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://lineagem.plaync.com/coupon',
-    search: `리니지M 쿠폰 ${YEAR}`
-  },
-  {
-    name: '리니지W', dev: 'NCSOFT', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://lineagew.plaync.com/coupon',
-    search: `리니지W 쿠폰 ${YEAR}`
-  },
-  {
-    name: '아이온2', dev: 'NCSOFT', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://aion2.plaync.com',
-    search: `아이온2 쿠폰코드 ${YEAR}`
-  },
-  {
-    name: '검은사막 모바일', dev: 'Pearl Abyss', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://www.global-blackdesert.com/news/coupon',
-    search: `검은사막 모바일 쿠폰 ${YEAR}`
-  },
-  {
-    name: '메이플스토리M', dev: 'Nexon', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://maplestory.nexon.com/coupon',
-    search: `메이플스토리M 쿠폰 ${YEAR}`
-  },
-  {
-    name: '블루 아카이브', dev: 'Nexon', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://bluearchive.nexon.com/coupon',
-    search: `블루아카이브 쿠폰코드 ${YEAR}`
-  },
-  {
-    name: '마비노기 모바일', dev: 'Nexon', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://mabinogi.nexon.com/coupon',
-    search: `마비노기 모바일 쿠폰 ${YEAR}`
-  },
-  {
-    name: '쿠키런: 킹덤', dev: 'Devsisters', genre: 'casual', tier: 'official',
-    officialUrl: 'https://coupon.devplay.com/coupon/ck/ko',
-    search: `쿠키런 킹덤 쿠폰코드 ${YEAR}`
-  },
-  {
-    name: '오딘: 발할라 라이징', dev: 'Kakao Games', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://odin.game.kakao.com',
-    search: `오딘 발할라 라이징 쿠폰 ${YEAR}`
-  },
-  {
-    name: '에픽세븐', dev: 'Smilegate', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://www.e7vau.lt/coupon',
-    search: `에픽세븐 쿠폰코드 ${YEAR}`
-  },
-
-  // ── 외산이지만 국내 인기 게임 (공식 페이지 있음) ──────
-  {
-    name: '원신', dev: 'HoYoverse', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://genshin.hoyoverse.com/ko/gift',
-    search: `원신 쿠폰코드 ${YEAR}`
-  },
-  {
-    name: '붕괴: 스타레일', dev: 'HoYoverse', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://hsr.hoyoverse.com/gift',
-    search: `붕괴 스타레일 쿠폰 ${YEAR}`
-  },
-  {
-    name: '젠레스 존 제로', dev: 'HoYoverse', genre: 'rpg', tier: 'official',
-    officialUrl: 'https://zzz.hoyoverse.com/gift',
-    search: `젠레스 존 제로 쿠폰 ${YEAR}`
-  },
-  {
-    name: '브롤스타즈', dev: 'Supercell', genre: 'casual', tier: 'search',
-    officialUrl: null,
-    search: `브롤스타즈 코드 ${YEAR}`
-  },
-  {
-    name: '클래시 오브 클랜', dev: 'Supercell', genre: 'strategy', tier: 'search',
-    officialUrl: null,
-    search: `클래시오브클랜 코드 ${YEAR}`
-  },
-  {
-    name: '클래시 로얄', dev: 'Supercell', genre: 'strategy', tier: 'search',
-    officialUrl: null,
-    search: `클래시로얄 코드 ${YEAR}`
-  },
-
-  // ── 웹검색으로 수집 ──────────────────────────────────
-  {
-    name: '로스트아크', dev: 'Smilegate', genre: 'rpg', tier: 'search',
-    officialUrl: null,
-    search: `로스트아크 쿠폰 ${YEAR} 공식`
-  },
-  {
-    name: '나이트 크로우', dev: 'MAG', genre: 'rpg', tier: 'search',
-    officialUrl: null,
-    search: `나이트크로우 쿠폰코드 ${YEAR}`
-  },
-  {
-    name: '나 혼자만 레벨업: ARISE', dev: 'Netmarble', genre: 'rpg', tier: 'search',
-    officialUrl: null,
-    search: `나혼자만레벨업 ARISE 쿠폰 ${YEAR}`
-  },
-  {
-    name: '트릭컬 RE:VIVE', dev: 'Broccoli', genre: 'rpg', tier: 'search',
-    officialUrl: null,
-    search: `트릭컬 리바이브 쿠폰코드 ${YEAR}`
-  },
-  {
-    name: '로스트 소드', dev: 'Netmarble', genre: 'rpg', tier: 'search',
-    officialUrl: null,
-    search: `로스트소드 쿠폰 ${YEAR}`
-  },
-  {
-    name: '던전앤파이터M', dev: 'Nexon', genre: 'rpg', tier: 'search',
-    officialUrl: null,
-    search: `던전앤파이터M 쿠폰 ${YEAR}`
-  },
-  {
-    name: '배틀그라운드 모바일', dev: 'Krafton', genre: 'fps', tier: 'search',
-    officialUrl: null,
-    search: `배틀그라운드 모바일 한국 쿠폰 ${YEAR}`
-  },
-  {
-    name: '라그나로크 오리진', dev: 'Gravity', genre: 'rpg', tier: 'search',
-    officialUrl: null,
-    search: `라그나로크 오리진 쿠폰코드 ${YEAR}`
-  },
-  {
-    name: '미르M', dev: 'WeMade', genre: 'rpg', tier: 'search',
-    officialUrl: null,
-    search: `미르M 쿠폰코드 ${YEAR}`
-  },
-  {
-    name: '그랑사가', dev: 'NPIXEL', genre: 'rpg', tier: 'search',
-    officialUrl: null,
-    search: `그랑사가 쿠폰코드 ${YEAR}`
-  },
-];
-
-const DELAY_MS = 2000;
-
-/* ───────────────────────────────────────────────────────
-   공식 페이지 직접 수집
-─────────────────────────────────────────────────────── */
-async function collectFromOfficialPage(game) {
-  console.log(`  🏛️ 공식 페이지: ${game.officialUrl}`);
-  try {
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1000,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-      messages: [{
-        role: 'user',
-        content: `${game.name} 공식 쿠폰 페이지(${game.officialUrl})와 "${game.search}" 검색으로 현재 유효한 쿠폰코드를 찾아줘.
-JSON 배열만 반환 (다른 텍스트 없이):
-[{"code":"쿠폰코드","reward":"보상내용","expire":"YYYY.MM.DD 또는 무기한","source":"공식 홈페이지"}]
-쿠폰 없으면 [] 만 반환.`
-      }]
-    });
-    return parseResponse(response, game);
-  } catch (e) {
-    console.log(`  ⚠️ 공식 페이지 실패 → 웹검색 폴백`);
-    return collectFromSearch(game);
-  }
-}
-
-/* ───────────────────────────────────────────────────────
-   웹검색 수집
-─────────────────────────────────────────────────────── */
-async function collectFromSearch(game) {
-  console.log(`  🔍 웹검색: ${game.search}`);
-  try {
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1000,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-      messages: [{
-        role: 'user',
-        content: `"${game.search}" 검색해서 ${YEAR}년 현재 유효한 쿠폰코드 찾아줘.
-공식 트위터/X, 공식 카페, 공식 공지 출처 우선. 최근 1개월 이내 글만 참고해.
-JSON 배열만 반환:
-[{"code":"쿠폰코드","reward":"보상내용","expire":"YYYY.MM.DD 또는 무기한","source":"출처"}]
-쿠폰 없으면 [] 만 반환.`
-      }]
-    });
-    return parseResponse(response, game);
-  } catch (e) {
-    console.log(`  ❌ 수집 실패: ${e.message}`);
-    return [];
-  }
-}
-
-/* ───────────────────────────────────────────────────────
-   응답 파싱 + 유효성 검증
-─────────────────────────────────────────────────────── */
-function parseResponse(response, game) {
-  const textContent = response.content
-    .filter(b => b.type === 'text')
-    .map(b => b.text)
-    .join('');
-
-  if (!textContent || textContent.trim() === '[]') return [];
-
-  const jsonMatch = textContent.match(/\[[\s\S]*?\]/);
-  if (!jsonMatch) return [];
-
-  let coupons;
-  try { coupons = JSON.parse(jsonMatch[0]); } catch (e) { return []; }
-  if (!Array.isArray(coupons)) return [];
-
-  const today = new Date();
-
-  return coupons.filter(c => {
-    if (!c.code || c.code.trim().length < 3) return false; // 너무 짧은 코드 제거
-    if (/^[0-9]+$/.test(c.code.trim())) return false;      // 숫자만인 코드 제거
-    // 이미 만료된 날짜 필터
-    if (c.expire && c.expire !== '무기한') {
-      const parts = c.expire.split('.');
-      if (parts.length === 3) {
-        const expDate = new Date(parts[0], parts[1] - 1, parts[2]);
-        if (expDate < today) return false;
+function fetchUrl(url, redirectCount = 0) {
+  return new Promise((resolve, reject) => {
+    if (redirectCount > 5) return reject(new Error('too many redirects'));
+    const req = https.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       }
-    }
-    return true;
-  }).map(c => ({
-    code:      c.code.trim().toUpperCase(),
-    reward:    c.reward || '보상 정보 없음',
-    expire:    c.expire || '무기한',
-    source:    c.source || (game.tier === 'official' ? '공식 홈페이지' : '웹 검색'),
-    game:      game.name,
-    dev:       game.dev,
-    genre:     game.genre,
-    tier:      game.tier,
-    status:    'new',
-    views:     Math.floor(Math.random() * 1500) + 300,
-    votes:     { ok: Math.floor(Math.random() * 80) + 5, bad: Math.floor(Math.random() * 8) },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }));
+    }, (res) => {
+      if ([301,302,303,307].includes(res.statusCode) && res.headers.location) {
+        const next = res.headers.location.startsWith('http')
+          ? res.headers.location
+          : BLUESTACKS_BASE + res.headers.location;
+        return fetchUrl(next, redirectCount + 1).then(resolve).catch(reject);
+      }
+      let data = '';
+      res.setEncoding('utf8');
+      res.on('data', c => data += c);
+      res.on('end', () => resolve(data));
+    });
+    req.on('error', reject);
+    req.setTimeout(12000, () => { req.destroy(); reject(new Error('timeout')); });
+  });
 }
 
-/* ───────────────────────────────────────────────────────
-   Firebase 저장 (중복 방지: merge)
-─────────────────────────────────────────────────────── */
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+/* ═══════════════════════════════════════════════════════
+   Step 1: 블루스택 목록 페이지에서 게임 목록 수집
+   반환: [{ slug, couponUrl, appPageUrl }]
+═══════════════════════════════════════════════════════ */
+async function collectGameList() {
+  console.log('📋 블루스택 게임 목록 수집 중...\n');
+  const games = [];
+  const seen = new Set();
+
+  for (let page = 1; page <= TOTAL_PAGES; page++) {
+    const url = page === 1
+      ? `${BLUESTACKS_BASE}/ko/blog/redeem-codes.html`
+      : `${BLUESTACKS_BASE}/ko/blog/redeem-codes/page/${page}.html`;
+
+    try {
+      const html = await fetchUrl(url);
+
+      // 쿠폰 페이지 링크: /ko/blog/redeem-codes/XXX-redeem-codes-ko.html
+      const re = /href="(\/ko\/blog\/redeem-codes\/([^"]+)-redeem-codes-ko\.html)"/g;
+      let m;
+      while ((m = re.exec(html)) !== null) {
+        const path = m[1];
+        const slug = m[2];
+        if (seen.has(path)) continue;
+        seen.add(path);
+        games.push({ slug, couponUrl: BLUESTACKS_BASE + path });
+      }
+      console.log(`  페이지 ${page}/${TOTAL_PAGES} → 누적 ${games.length}개`);
+    } catch (e) {
+      console.log(`  ⚠️ 페이지 ${page} 실패: ${e.message}`);
+    }
+    await delay(DELAY_MS);
+  }
+
+  console.log(`\n✅ 총 ${games.length}개 게임 URL 수집 완료\n`);
+  return games;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Step 2: 쿠폰 페이지에서 쿠폰코드 + 앱페이지 URL 파싱
+═══════════════════════════════════════════════════════ */
+function parseCouponPage(html, slug) {
+  // ── 게임명 추출
+  const h1 = (html.match(/<h1[^>]*>\s*([^<]+)\s*<\/h1>/) || [])[1] || slug;
+  const gameName = h1
+    .replace(/공략\s*[-–]\s*최신.*/i, '')
+    .replace(/사용 가능한 모든 쿠폰 코드.*/i, '')
+    .replace(/\d{4}년.*/,'')
+    .replace(/쿠폰 코드.*/i,'')
+    .replace(/교환 코드.*/i,'')
+    .trim();
+
+  // ── 앱 페이지 링크 추출 (이미지 + 패키지명 있는 페이지)
+  // 예: /ko/apps/role-playing/ragnarok-origin-classic-on-pc.html
+  const appPageMatch = html.match(/href="(\/ko\/apps\/[^"]+on-pc\.html)"/);
+  const appPageUrl = appPageMatch ? BLUESTACKS_BASE + appPageMatch[1] : null;
+
+  // ── 쿠폰 테이블 파싱
+  const coupons = [];
+
+  // 방법1: <tr><td><strong>CODE</strong></td><td>보상</td></tr>
+  const tableRe = /<tr[^>]*>[\s\S]*?<td[^>]*>\s*<strong>\s*([A-Z0-9가-힣_\-]{3,30})\s*<\/strong>\s*<\/td>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>/gi;
+  let m;
+  while ((m = tableRe.exec(html)) !== null) {
+    const code = m[1].trim();
+    const reward = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g,' ').trim();
+    if (code && !/^\d+$/.test(code)) coupons.push({ code, reward });
+  }
+
+  // 방법2: 굵은 글씨 코드 (테이블 없을 때)
+  if (coupons.length === 0) {
+    const boldRe = /<strong>\s*([A-Z0-9]{4,25})\s*<\/strong>/g;
+    while ((m = boldRe.exec(html)) !== null) {
+      const code = m[1].trim();
+      if (!/^\d+$/.test(code)) coupons.push({ code, reward: '인게임 보상' });
+    }
+  }
+
+  // ── 만료일 추출
+  const expMatch = html.match(/(\d{4})[년.\-](\d{1,2})[월.\-](\d{1,2})/);
+  const today = new Date();
+  let expire = '무기한';
+  if (expMatch) {
+    const d = new Date(expMatch[1], expMatch[2]-1, expMatch[3]);
+    if (d > today) {
+      expire = `${expMatch[1]}.${String(expMatch[2]).padStart(2,'0')}.${String(expMatch[3]).padStart(2,'0')}`;
+    }
+  }
+
+  // ── 장르 추출
+  const genreMap = { '롤플레잉':'rpg','RPG':'rpg','MMORPG':'rpg','액션':'action','전략':'strategy','캐주얼':'casual','아케이드':'casual','카드':'casual','FPS':'fps' };
+  let genre = 'rpg';
+  for (const [k,v] of Object.entries(genreMap)) {
+    if (html.includes(k)) { genre = v; break; }
+  }
+
+  return { gameName, appPageUrl, coupons, expire, genre };
+}
+
+/* ═══════════════════════════════════════════════════════
+   Step 3: 앱 페이지에서 이미지 URL + 패키지명 추출
+═══════════════════════════════════════════════════════ */
+async function fetchGameImage(appPageUrl) {
+  if (!appPageUrl) return { imageUrl: null, packageName: null };
+  try {
+    const html = await fetchUrl(appPageUrl);
+
+    // 패키지명 추출: app_pkg=com.xxxxx.yyyy
+    const pkgMatch = html.match(/app_pkg=([a-z][a-z0-9._]+)/i);
+    const packageName = pkgMatch ? pkgMatch[1] : null;
+
+    // 아이콘 이미지: cdn-icon.bluestacks.com
+    const iconMatch = html.match(/src="(https:\/\/cdn-icon\.bluestacks\.com\/[^"]+)"/);
+    let imageUrl = iconMatch ? iconMatch[1] : null;
+
+    // 아이콘 없으면 Google Play 아이콘으로 폴백
+    if (!imageUrl && packageName) {
+      // iTunes API로 폴백 (Google Play는 CORS 이슈)
+      imageUrl = `https://play-lh.googleusercontent.com/search?q=${packageName}`;
+    }
+
+    return { imageUrl, packageName };
+  } catch (e) {
+    return { imageUrl: null, packageName: null };
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   iTunes API로 이미지 폴백 (패키지명 없을 때)
+═══════════════════════════════════════════════════════ */
+function fetchItunesImage(gameName) {
+  return new Promise((resolve) => {
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(gameName)}&country=kr&media=software&limit=1`;
+    https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try {
+          const j = JSON.parse(data);
+          const img = j.results?.[0]?.artworkUrl100?.replace('100x100bb','200x200bb') || null;
+          resolve(img);
+        } catch { resolve(null); }
+      });
+    }).on('error', () => resolve(null))
+      .setTimeout(5000, function() { this.destroy(); resolve(null); });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   Step 4: Firebase 저장
+═══════════════════════════════════════════════════════ */
 async function saveToDB(coupons) {
   if (!coupons.length) return;
-  const batch = db.batch();
-  for (const coupon of coupons) {
-    const id = `${coupon.game}_${coupon.code}`.replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
-    const ref = db.collection('coupons').doc(id);
-    batch.set(ref, coupon, { merge: true }); // views/votes 기존값 유지
+  // 배치 500개 제한 처리
+  for (let i = 0; i < coupons.length; i += 400) {
+    const batch = db.batch();
+    for (const c of coupons.slice(i, i+400)) {
+      const id = `${c.game}_${c.code}`.replace(/[^a-zA-Z0-9가-힣_-]/g,'_');
+      batch.set(db.collection('coupons').doc(id), c, { merge: true });
+    }
+    await batch.commit();
   }
-  await batch.commit();
   console.log(`  💾 ${coupons.length}개 저장 완료`);
 }
 
-/* ───────────────────────────────────────────────────────
-   만료 쿠폰 자동 삭제 (7일 경과)
-─────────────────────────────────────────────────────── */
-async function cleanExpiredCoupons() {
-  console.log('\n🧹 만료 쿠폰 정리 중...');
+/* ═══════════════════════════════════════════════════════
+   Step 5: 만료 쿠폰 정리
+   - 만료일 지난 것: 즉시 삭제
+   - 만료일 없는 것: 30일 후 삭제
+═══════════════════════════════════════════════════════ */
+async function cleanCoupons() {
+  console.log('🧹 만료 쿠폰 정리 중...');
   try {
     const snap = await db.collection('coupons').get();
     const today = new Date();
-    const batch = db.batch();
-    let count = 0;
+    const batches = [db.batch()];
+    let idx = 0, cnt = 0, expired = 0, old = 0;
+
     snap.forEach(doc => {
-      const { expire } = doc.data();
-      if (!expire || expire === '무기한') return;
-      const parts = expire.split('.');
-      if (parts.length !== 3) return;
-      const expDate = new Date(parts[0], parts[1] - 1, parts[2]);
-      if ((today - expDate) / 86400000 > 7) { batch.delete(doc.ref); count++; }
+      const d = doc.data();
+      let shouldDelete = false;
+
+      if (d.expire && d.expire !== '무기한') {
+        const parts = d.expire.split('.');
+        if (parts.length === 3) {
+          const exp = new Date(parts[0], parts[1]-1, parts[2]);
+          if ((today - exp) / 86400000 > 1) { shouldDelete = true; expired++; }
+        }
+      } else if (d.expire === '무기한' && d.createdAt) {
+        const created = new Date(d.createdAt);
+        if ((today - created) / 86400000 > 30) { shouldDelete = true; old++; }
+      }
+
+      if (shouldDelete) {
+        if (cnt > 0 && cnt % 400 === 0) { batches.push(db.batch()); idx++; }
+        batches[idx].delete(doc.ref);
+        cnt++;
+      }
     });
-    if (count > 0) { await batch.commit(); console.log(`  🗑️ ${count}개 삭제`); }
-    else console.log('  ✅ 삭제할 쿠폰 없음');
-  } catch (e) { console.log('  ⚠️ 정리 실패:', e.message); }
+
+    if (cnt > 0) {
+      for (const b of batches) await b.commit();
+      console.log(`  🗑️ 만료 ${expired}개 + 오래된 ${old}개 삭제\n`);
+    } else {
+      console.log('  ✅ 삭제할 쿠폰 없음\n');
+    }
+  } catch (e) {
+    console.log('  ⚠️ 정리 실패:', e.message, '\n');
+  }
 }
 
-/* ───────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════
    메인
-─────────────────────────────────────────────────────── */
+═══════════════════════════════════════════════════════ */
 async function main() {
+  const startTime = Date.now();
   console.log('🚀 쿠폰던전 자동수집 시작!');
   console.log(`📅 ${new Date().toLocaleString('ko-KR')}`);
-  console.log(`🎮 수집 대상: ${GAMES.length}개 게임 (국내 중심)\n`);
+  console.log('💰 Claude API 비용: 0원 (블루스택 직접 크롤링)\n');
 
-  await cleanExpiredCoupons();
+  // 0) 만료 쿠폰 먼저 정리
+  await cleanCoupons();
 
-  let total = 0;
-  const official = GAMES.filter(g => g.tier === 'official');
-  const searchGames = GAMES.filter(g => g.tier === 'search');
+  // 1) 게임 목록 수집
+  const gameList = await collectGameList();
 
-  console.log(`\n📋 공식 페이지 수집 (${official.length}개 게임)`);
-  for (const game of official) {
-    console.log(`\n🔍 ${game.name}...`);
-    const coupons = await collectFromOfficialPage(game);
-    console.log(`  → ${coupons.length}개 유효 쿠폰`);
-    if (coupons.length > 0) { await saveToDB(coupons); total += coupons.length; }
-    await new Promise(r => setTimeout(r, DELAY_MS));
+  // 2) 각 게임 처리
+  console.log(`🎮 게임별 쿠폰 + 이미지 수집 시작\n`);
+  const allCoupons = [];
+  let success = 0, empty = 0, fail = 0;
+
+  for (const game of gameList) {
+    try {
+      // 쿠폰 페이지 크롤링
+      const html = await fetchUrl(game.couponUrl);
+      const { gameName, appPageUrl, coupons, expire, genre } = parseCouponPage(html, game.slug);
+
+      if (coupons.length === 0) {
+        process.stdout.write(`  ⬜ ${gameName}: 쿠폰 없음\n`);
+        empty++;
+        await delay(DELAY_MS);
+        continue;
+      }
+
+      // 이미지 수집 (앱 페이지 → iTunes 순으로 시도)
+      let imageUrl = null;
+      let packageName = null;
+
+      if (appPageUrl) {
+        const appInfo = await fetchGameImage(appPageUrl);
+        imageUrl = appInfo.imageUrl;
+        packageName = appInfo.packageName;
+        await delay(800);
+      }
+
+      // 블루스택 아이콘 없으면 iTunes로 폴백
+      if (!imageUrl) {
+        imageUrl = await fetchItunesImage(gameName);
+      }
+
+      const rank = GAME_RANK[gameName] || 500;
+
+      const formatted = coupons
+        .filter(c => c.code && c.code.length >= 3 && !/^\d+$/.test(c.code))
+        .map(c => ({
+          code:        c.code.toUpperCase(),
+          reward:      c.reward || '인게임 보상',
+          expire:      expire,
+          source:      '블루스택',
+          game:        gameName,
+          genre:       genre,
+          rank:        rank,
+          imageUrl:    imageUrl,      // ← 이미지 URL 저장
+          packageName: packageName,   // ← 패키지명 저장
+          status:      'new',
+          views:       Math.floor(Math.random() * 800) + 100,
+          votes:       { ok: 0, bad: 0 },
+          createdAt:   new Date().toISOString(),
+          updatedAt:   new Date().toISOString(),
+        }));
+
+      allCoupons.push(...formatted);
+      console.log(`  ✅ ${gameName}: ${formatted.length}개 쿠폰 | 이미지: ${imageUrl ? '✓' : '✗'} | 순위: #${rank}`);
+      success++;
+
+    } catch (e) {
+      console.log(`  ❌ ${game.slug}: ${e.message}`);
+      fail++;
+    }
+    await delay(DELAY_MS);
   }
 
-  console.log(`\n🌐 웹검색 수집 (${searchGames.length}개 게임)`);
-  for (const game of searchGames) {
-    console.log(`\n🔍 ${game.name}...`);
-    const coupons = await collectFromSearch(game);
-    console.log(`  → ${coupons.length}개 유효 쿠폰`);
-    if (coupons.length > 0) { await saveToDB(coupons); total += coupons.length; }
-    await new Promise(r => setTimeout(r, DELAY_MS));
-  }
+  // 3) 일괄 저장
+  console.log(`\n💾 Firebase 저장 중... (총 ${allCoupons.length}개 쿠폰)`);
+  await saveToDB(allCoupons);
 
-  console.log(`\n✅ 완료! 총 ${total}개 쿠폰 수집/업데이트`);
+  // 4) 결과 요약
+  const elapsed = Math.round((Date.now() - startTime) / 1000);
+  const min = Math.floor(elapsed / 60);
+  const sec = elapsed % 60;
+  console.log('\n══════════════════════════════════════');
+  console.log(`✅ 완료! 소요시간: ${min}분 ${sec}초`);
+  console.log(`  게임 성공: ${success}개 | 빈 페이지: ${empty}개 | 실패: ${fail}개`);
+  console.log(`  저장된 쿠폰: ${allCoupons.length}개`);
+  console.log(`  이미지 수집: ${allCoupons.filter(c=>c.imageUrl).length}개`);
+  console.log('══════════════════════════════════════');
 }
 
 main().catch(console.error);
