@@ -359,7 +359,7 @@ Sitemap: ${SITE_URL}/sitemap.xml`;
 async function pushToGitHub(files) {
   console.log('\n📤 GitHub에 파일 업로드 중...');
   try {
-    const token = process.env.GITHUB_TOKEN;
+    const token = process.env.PAT_TOKEN;
     const repoUrl = `https://${token}@github.com/krhym00001-dotcom/coupon-dungeon-site.git`;
 
     // Git 글로벌 설정 (clone 전에 먼저!)
