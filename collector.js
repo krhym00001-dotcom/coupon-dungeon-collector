@@ -555,9 +555,9 @@ async function main() {
       // Firebase 저장용
       const formatted = validCoupons.map(c => ({
         code: c.code.toUpperCase(), reward: c.reward || '인게임 보상',
-        expire, source: '블루스택', game: gameName, genre: genre.toLowerCase(),
+        expire, source: '쿠폰던전', game: gameName, genre: genre.toLowerCase(),
         rank, imageUrl, packageName, status: 'new',
-        views: Math.floor(Math.random() * 800) + 100,
+        views: Math.floor((500) * 0.5 + Math.random() * 200),
         votes: { ok: 0, bad: 0 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
