@@ -104,7 +104,7 @@ const SLUG_TO_KO = {
   'ace-division-mecha':'에이스 디비전',
   'zenless-zone-zero':'젠레스 존 제로',
   'combo-hero':'콤보 히어로',
-  'honor-of-kings':'왕자영요',
+  'honor-of-kings':'Honor of Kings',
   'genshin-impact':'원신',
   'summoners-war':'서머너즈 워',
   'tarisland':'타리스랜드',
