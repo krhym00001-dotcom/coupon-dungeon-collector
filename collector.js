@@ -359,18 +359,18 @@ Sitemap: ${SITE_URL}/sitemap.xml`;
 async function pushToGitHub(files) {
   console.log('\n📤 GitHub에 파일 업로드 중...');
   try {
-    // Git 설정
-    execSync('git config user.email "action@github.com"');
-    execSync('git config user.name "Coupon Dungeon Bot"');
-
-    // coupon-dungeon-site 레포 클론
     const token = process.env.GITHUB_TOKEN;
     const repoUrl = `https://${token}@github.com/krhym00001-dotcom/coupon-dungeon-site.git`;
 
+    // Git 글로벌 설정 (clone 전에 먼저!)
+    execSync('git config --global user.email "action@github.com"');
+    execSync('git config --global user.name "Coupon Dungeon Bot"');
+
+    // coupon-dungeon-site 레포 클론
     if (!fs.existsSync('/tmp/site')) {
       execSync(`git clone ${repoUrl} /tmp/site`);
     } else {
-      execSync('git -C /tmp/site pull');
+      execSync('git -C /tmp/site pull origin main');
     }
 
     // 디렉토리 생성
