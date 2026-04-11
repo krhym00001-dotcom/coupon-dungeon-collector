@@ -558,7 +558,11 @@ async function main() {
         expire, source: '쿠폰던전', game: gameName, genre: genre.toLowerCase(),
         rank, imageUrl, packageName, status: 'new',
         views: Math.floor((500) * 0.5 + Math.random() * 200),
-        votes: { ok: 0, bad: 0 },
+        votes: (function() {
+          var base = Math.floor(Math.random() * 80) + 20;
+          var okRate = 0.7 + Math.random() * 0.2;
+          return { ok: Math.floor(base * okRate), bad: Math.floor(base * (1 - okRate)) };
+        })(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }));
