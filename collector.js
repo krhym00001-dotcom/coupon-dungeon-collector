@@ -592,10 +592,10 @@ async function main() {
   console.log(`  → 게임 ${gamePageSlugs.length}개 + 공략 ${guidesSlugs.length}개 + 뉴스 ${newsSlugs.length}개`);
 
   // GitHub push
-  if (process.env.GITHUB_TOKEN) {
+  if (process.env.PAT_TOKEN) {
     await pushToGitHub(gamePageFiles);
   } else {
-    console.log('\n⚠️ GITHUB_TOKEN 없음 — 로컬 저장만 합니다');
+    console.log('\n⚠️ PAT_TOKEN 없음 — 로컬 저장만 합니다');
     Object.entries(gamePageFiles).forEach(([filePath, content]) => {
       const dir = path.dirname(filePath);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
