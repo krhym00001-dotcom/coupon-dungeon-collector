@@ -1,7 +1,7 @@
 name: 쿠폰 자동수집 + SEO 페이지 생성
 on:
   schedule:
-    - cron: '0 21 * * *'   # 매일 오전 6시 (한국시간)
+    - cron: '0 21 * * *'
   workflow_dispatch:
 
 jobs:
@@ -23,5 +23,5 @@ jobs:
       - name: 쿠폰 수집 + SEO 페이지 생성
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: node collector.js
