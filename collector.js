@@ -13,7 +13,7 @@ const db = getFirestore();
 const BLUESTACKS_BASE = 'https://www.bluestacks.com';
 const TOTAL_PAGES = 11;
 const DELAY_MS = 1500;
-const SITE_URL = 'https://calm-llama-f6930c.netlify.app'; // 나중에 도메인 바꾸면 여기만 수정
+const SITE_URL = 'https://coupondungeon.kr'; // 나중에 도메인 바꾸면 여기만 수정
 
 /* ═══════════════════════════════════════════════════════
    슬러그 → 한글 게임명 매핑
