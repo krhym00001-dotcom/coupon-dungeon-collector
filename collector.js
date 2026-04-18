@@ -1119,6 +1119,23 @@ async function main() {
       const newHoyo = hoyo.filter(c => !existingCodes.has(`${c.game}_${c.code}`));
       allCoupons.push(...newHoyo);
       console.log(`  ✅ 호요버스 신규 쿠폰 ${newHoyo.length}개 추가`);
+
+      // 호요버스 게임 페이지 별도 생성
+      for (const game of HOYOVERSE_GAMES) {
+        const gameCoupons = newHoyo.filter(c => c.game === game.name);
+        // 기존 블루스택 쿠폰도 합치기
+        const existingGameCoupons = allCoupons.filter(c => c.game === game.name && !newHoyo.includes(c));
+        const allGameCoupons = [...existingGameCoupons, ...gameCoupons];
+
+        if (allGameCoupons.length > 0) {
+          const slug = toSlug(game.name);
+          const imageUrl = allGameCoupons[0].imageUrl || null;
+          const genre = allGameCoupons[0].genre || 'rpg';
+          gamePageFiles[`game/${slug}.html`] = buildGamePage(game.name, allGameCoupons, imageUrl, genre);
+          if (!gamePageSlugs.includes(slug)) gamePageSlugs.push(slug);
+          console.log(`  📄 ${game.name} 게임 페이지 생성 (${allGameCoupons.length}개 쿠폰)`);
+        }
+      }
     }
   } catch(e) {
     console.log(`  ⚠️ 호요버스 수집 실패: ${e.message}`);
