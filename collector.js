@@ -232,6 +232,136 @@ function toSlug(str) {
     .toLowerCase();
 }
 
+
+/* ═══════════════════════════════════════════════════════
+   호요버스 게임 전용 쿠폰 수집
+   (원신, 붕괴:스타레일, 젠레스 존 제로, 명조)
+═══════════════════════════════════════════════════════ */
+const HOYOVERSE_GAMES = [
+  {
+    name: '원신',
+    slug: 'genshin-impact',
+    url: 'https://www.pockettactics.com/genshin-impact/codes',
+    genre: 'rpg',
+    rank: 6,
+  },
+  {
+    name: '붕괴: 스타레일',
+    slug: 'honkai-star-rail',
+    url: 'https://www.pockettactics.com/honkai-star-rail/codes',
+    genre: 'rpg',
+    rank: 5,
+  },
+  {
+    name: '젠레스 존 제로',
+    slug: 'zenless-zone-zero',
+    url: 'https://www.pockettactics.com/zenless-zone-zero/codes',
+    genre: 'rpg',
+    rank: 7,
+  },
+  {
+    name: '명조: 워더링 웨이브',
+    slug: 'wuthering-waves',
+    url: 'https://www.pockettactics.com/wuthering-waves/codes',
+    genre: 'rpg',
+    rank: 8,
+  },
+];
+
+// Pockettactics에서 쿠폰 코드 파싱
+function parsePockettacticsCodes(html, gameName) {
+  const coupons = [];
+  try {
+    // <li> 태그 안의 코드 패턴 찾기
+    // 형태: <li><strong>CODE123</strong> – 보상 설명</li>
+    const liRe = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+    let m;
+    while ((m = liRe.exec(html)) !== null) {
+      const liContent = m[1];
+      // strong 태그 안의 코드 추출
+      const codeMatch = liContent.match(/<strong[^>]*>\s*([A-Z0-9]{4,25})\s*<\/strong>/i);
+      if (!codeMatch) continue;
+      const code = codeMatch[1].trim().toUpperCase();
+      if (/^\d+$/.test(code)) continue; // 숫자만이면 스킵
+
+      // 보상 텍스트 추출
+      const reward = liContent
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(code, '')
+        .replace(/^[\s\-–—]+/, '')
+        .trim()
+        .substring(0, 100);
+
+      coupons.push({ code, reward: reward || '인게임 보상' });
+    }
+
+    // 위 방법으로 못 찾으면 코드 블록에서 직접 추출
+    if (coupons.length === 0) {
+      const codeRe = /([A-Z]{2,}[A-Z0-9]{2,}[0-9A-Z]*)/g;
+      const found = new Set();
+      let cm;
+      while ((cm = codeRe.exec(html)) !== null) {
+        const code = cm[1];
+        if (code.length >= 6 && code.length <= 25 && !/^\d+$/.test(code) && !found.has(code)) {
+          // 일반 단어 필터링
+          if (/[0-9]/.test(code) || code.length >= 8) {
+            found.add(code);
+            coupons.push({ code, reward: '인게임 보상' });
+          }
+        }
+      }
+    }
+  } catch(e) {
+    console.log(`    ⚠️ ${gameName} 파싱 오류: ${e.message}`);
+  }
+  return coupons;
+}
+
+async function collectHoyoverseCoupons() {
+  console.log('\n🎮 호요버스 게임 쿠폰 수집 시작...');
+  const allCoupons = [];
+
+  for (const game of HOYOVERSE_GAMES) {
+    try {
+      const html = await fetchUrl(game.url);
+      const coupons = parsePockettacticsCodes(html, game.name);
+
+      // iTunes 이미지 가져오기
+      const imageUrl = await fetchItunesImage(game.name);
+      await delay(300);
+
+      const formatted = coupons.map(c => ({
+        code: c.code,
+        reward: c.reward,
+        expire: '무기한',
+        source: 'Pockettactics',
+        game: game.name,
+        genre: game.genre,
+        rank: game.rank,
+        imageUrl,
+        packageName: null,
+        status: 'new',
+        views: Math.floor(1000 + Math.random() * 2000),
+        votes: {
+          ok: Math.floor(50 + Math.random() * 150),
+          bad: Math.floor(5 + Math.random() * 20)
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+
+      console.log(`  ✅ ${game.name}: ${coupons.length}개 수집 | 이미지: ${imageUrl ? '✓' : '✗'}`);
+      allCoupons.push(...formatted);
+    } catch(e) {
+      console.log(`  ❌ ${game.name} 수집 실패: ${e.message}`);
+    }
+    await delay(1000);
+  }
+
+  return allCoupons;
+}
+
 /* ═══════════════════════════════════════════════════════
    iTunes Search API - 합법적 고화질 아이콘
 ═══════════════════════════════════════════════════════ */
@@ -977,6 +1107,21 @@ async function main() {
       console.log(`  ❌ ${game.slug}: ${e.message}`); fail++;
     }
     await delay(DELAY_MS);
+  }
+
+  // 호요버스 게임 쿠폰 별도 수집 (블루스택에서 잘 안 잡히는 게임들)
+  console.log('\n🎮 호요버스 게임 쿠폰 추가 수집...');
+  try {
+    const hoyo = await collectHoyoverseCoupons();
+    if (hoyo.length > 0) {
+      // 중복 제거: 이미 수집된 코드는 스킵
+      const existingCodes = new Set(allCoupons.map(c => `${c.game}_${c.code}`));
+      const newHoyo = hoyo.filter(c => !existingCodes.has(`${c.game}_${c.code}`));
+      allCoupons.push(...newHoyo);
+      console.log(`  ✅ 호요버스 신규 쿠폰 ${newHoyo.length}개 추가`);
+    }
+  } catch(e) {
+    console.log(`  ⚠️ 호요버스 수집 실패: ${e.message}`);
   }
 
   console.log(`\n💾 Firebase 저장 중... (${allCoupons.length}개)`);
