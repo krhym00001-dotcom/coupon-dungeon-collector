@@ -288,6 +288,225 @@ async function fetchGameImage(appPageUrl, gameName) {
   } catch(e) { return { imageUrl: null, packageName: null }; }
 }
 
+
+/* ═══════════════════════════════════════════════════════
+   공략 정적 페이지 생성
+═══════════════════════════════════════════════════════ */
+function buildGuidePage(guide) {
+  const slug = toSlug(guide.title || '');
+  const year = new Date().getFullYear();
+  const today = new Date().toLocaleDateString('ko-KR');
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": guide.title,
+    "description": guide.content ? guide.content.substring(0, 150) : guide.title,
+    "url": `${SITE_URL}/guide/${slug}.html`,
+    "dateModified": new Date().toISOString(),
+    "author": {"@type": "Organization", "name": "쿠폰던전"},
+    "publisher": {"@type": "Organization", "name": "쿠폰던전"},
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"쿠폰던전","item":SITE_URL},
+        {"@type":"ListItem","position":2,"name":"공략","item":`${SITE_URL}/#guide`},
+        {"@type":"ListItem","position":3,"name":guide.title,"item":`${SITE_URL}/guide/${slug}.html`}
+      ]
+    }
+  };
+
+  const content = (guide.content || '공략 내용이 없어요.')
+    .replace(/## (.+)/g, '<h2>$1</h2>')
+    .replace(/### (.+)/g, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${guide.title} — 쿠폰던전 공략</title>
+<meta name="description" content="${guide.title}. 쿠폰던전에서 최신 게임 공략을 확인하세요.">
+<meta property="og:title" content="${guide.title} — 쿠폰던전">
+<meta property="og:url" content="${SITE_URL}/guide/${slug}.html">
+<link rel="canonical" href="${SITE_URL}/guide/${slug}.html">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3292286283313303" crossorigin="anonymous"></script>
+<script type="application/ld+json">${JSON.stringify(schemaData)}</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#09090f;color:#efefef;font-family:'Noto Sans KR',sans-serif;min-height:100vh;line-height:1.8}
+a{color:#e94560;text-decoration:none}
+header{background:#13131f;border-bottom:1px solid rgba(255,255,255,.07);padding:0 1.25rem;height:54px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:18px;font-weight:800;color:#efefef}.logo span{color:#e94560}
+.home-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#aaa;padding:6px 14px;border-radius:7px;font-size:12px;text-decoration:none}
+.ad-wrap{padding:8px 1.25rem;background:#13131f;border-bottom:1px solid rgba(255,255,255,.07);display:flex;justify-content:center}
+.container{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem}
+.breadcrumb{font-size:12px;color:#555;margin-bottom:1.5rem}
+.breadcrumb a{color:#aaa}
+.article-header{margin-bottom:2rem}
+.cat-badge{background:rgba(155,93,229,.2);color:#9b5de5;border:1px solid rgba(155,93,229,.3);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:10px}
+.article-title{font-size:26px;font-weight:900;line-height:1.4;margin-bottom:10px}
+.article-meta{font-size:12px;color:#555}
+.article-body{font-size:14px;color:#ccc;line-height:1.9}
+.article-body h2{font-size:18px;font-weight:700;color:#efefef;margin:1.5rem 0 .75rem;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07)}
+.article-body h3{font-size:15px;font-weight:700;color:#e94560;margin:1.2rem 0 .5rem}
+.article-body p{margin-bottom:1rem}
+.article-body strong{color:#efefef}
+.related-box{background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-top:2rem}
+.related-title{font-size:13px;font-weight:700;color:#aaa;margin-bottom:12px}
+.related-links{display:flex;flex-wrap:wrap;gap:8px}
+.related-link{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#aaa;padding:6px 12px;border-radius:6px;font-size:12px;text-decoration:none;transition:all .2s}
+.related-link:hover{border-color:#e94560;color:#e94560}
+footer{background:#13131f;border-top:1px solid rgba(255,255,255,.07);padding:1.5rem;text-align:center;color:#555;font-size:12px;margin-top:3rem}
+footer a{color:#aaa}
+</style>
+</head>
+<body>
+<header>
+  <a href="/" class="logo">쿠폰<span>던전</span></a>
+  <a href="/" class="home-btn">← 전체 쿠폰 보기</a>
+</header>
+<div class="ad-wrap">
+  <ins class="adsbygoogle" style="display:block;width:100%;max-width:728px" data-ad-client="ca-pub-3292286283313303" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">쿠폰던전</a> › <a href="/#guide">공략</a> › ${guide.title}
+  </nav>
+  <div class="article-header">
+    <span class="cat-badge">${guide.cat || '공략'}</span>
+    <h1 class="article-title">${guide.title}</h1>
+    <div class="article-meta">📅 ${today} · 🎮 ${guide.game || ''}</div>
+  </div>
+  <div class="article-body">
+    <p>${content}</p>
+  </div>
+  <div class="related-box">
+    <div class="related-title">🎫 관련 쿠폰 바로가기</div>
+    <div class="related-links">
+      <a class="related-link" href="/">전체 쿠폰 보기</a>
+      ${guide.game ? `<a class="related-link" href="/game/${toSlug(guide.game)}.html">${guide.game} 쿠폰</a>` : ''}
+    </div>
+  </div>
+</div>
+<footer>
+  <a href="/">쿠폰던전</a> &nbsp;·&nbsp;
+  <a href="/#terms">이용약관</a> &nbsp;·&nbsp;
+  <a href="/#terms">개인정보처리방침</a><br><br>
+  © ${year} 쿠폰던전
+</footer>
+</body>
+</html>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   뉴스 정적 페이지 생성
+═══════════════════════════════════════════════════════ */
+function buildNewsPage(news) {
+  const slug = toSlug(news.title || '');
+  const year = new Date().getFullYear();
+  const today = new Date().toLocaleDateString('ko-KR');
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": news.title,
+    "description": news.content ? news.content.substring(0, 150) : news.title,
+    "url": `${SITE_URL}/news/${slug}.html`,
+    "datePublished": news.createdAt || new Date().toISOString(),
+    "dateModified": new Date().toISOString(),
+    "author": {"@type": "Organization", "name": "쿠폰던전"},
+    "publisher": {"@type": "Organization", "name": "쿠폰던전"},
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"쿠폰던전","item":SITE_URL},
+        {"@type":"ListItem","position":2,"name":"뉴스","item":`${SITE_URL}/#news`},
+        {"@type":"ListItem","position":3,"name":news.title,"item":`${SITE_URL}/news/${slug}.html`}
+      ]
+    }
+  };
+
+  const content = (news.content || '뉴스 내용이 없어요.')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${news.title} — 쿠폰던전 뉴스</title>
+<meta name="description" content="${news.title}. 쿠폰던전에서 최신 게임 뉴스를 확인하세요.">
+<meta property="og:title" content="${news.title} — 쿠폰던전">
+<meta property="og:url" content="${SITE_URL}/news/${slug}.html">
+<link rel="canonical" href="${SITE_URL}/news/${slug}.html">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3292286283313303" crossorigin="anonymous"></script>
+<script type="application/ld+json">${JSON.stringify(schemaData)}</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#09090f;color:#efefef;font-family:'Noto Sans KR',sans-serif;min-height:100vh;line-height:1.8}
+a{color:#e94560;text-decoration:none}
+header{background:#13131f;border-bottom:1px solid rgba(255,255,255,.07);padding:0 1.25rem;height:54px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:18px;font-weight:800;color:#efefef}.logo span{color:#e94560}
+.home-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#aaa;padding:6px 14px;border-radius:7px;font-size:12px;text-decoration:none}
+.ad-wrap{padding:8px 1.25rem;background:#13131f;border-bottom:1px solid rgba(255,255,255,.07);display:flex;justify-content:center}
+.container{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem}
+.breadcrumb{font-size:12px;color:#555;margin-bottom:1.5rem}
+.breadcrumb a{color:#aaa}
+.news-badge{background:rgba(62,207,142,.15);color:#3ecf8e;border:1px solid rgba(62,207,142,.25);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:10px}
+.news-title{font-size:26px;font-weight:900;line-height:1.4;margin-bottom:10px}
+.news-meta{font-size:12px;color:#555;margin-bottom:1.5rem}
+.news-body{font-size:14px;color:#ccc;line-height:1.9}
+.news-body p{margin-bottom:1rem}
+.related-box{background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-top:2rem}
+.related-title{font-size:13px;font-weight:700;color:#aaa;margin-bottom:12px}
+.related-links{display:flex;flex-wrap:wrap;gap:8px}
+.related-link{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#aaa;padding:6px 12px;border-radius:6px;font-size:12px;text-decoration:none;transition:all .2s}
+.related-link:hover{border-color:#3ecf8e;color:#3ecf8e}
+footer{background:#13131f;border-top:1px solid rgba(255,255,255,.07);padding:1.5rem;text-align:center;color:#555;font-size:12px;margin-top:3rem}
+footer a{color:#aaa}
+</style>
+</head>
+<body>
+<header>
+  <a href="/" class="logo">쿠폰<span>던전</span></a>
+  <a href="/" class="home-btn">← 전체 쿠폰 보기</a>
+</header>
+<div class="ad-wrap">
+  <ins class="adsbygoogle" style="display:block;width:100%;max-width:728px" data-ad-client="ca-pub-3292286283313303" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">쿠폰던전</a> › <a href="/#news">뉴스</a> › ${news.title}
+  </nav>
+  <span class="news-badge">📰 게임 뉴스</span>
+  <h1 class="news-title">${news.title}</h1>
+  <div class="news-meta">📅 ${news.date || today} · 🎮 ${news.game || ''}</div>
+  <div class="news-body">
+    <p>${content}</p>
+  </div>
+  <div class="related-box">
+    <div class="related-title">🎫 관련 쿠폰 바로가기</div>
+    <div class="related-links">
+      <a class="related-link" href="/">전체 쿠폰 보기</a>
+      ${news.game ? `<a class="related-link" href="/game/${toSlug(news.game)}.html">${news.game} 쿠폰</a>` : ''}
+    </div>
+  </div>
+</div>
+<footer>
+  <a href="/">쿠폰던전</a> &nbsp;·&nbsp;
+  <a href="/#terms">이용약관</a> &nbsp;·&nbsp;
+  <a href="/#terms">개인정보처리방침</a><br><br>
+  © ${year} 쿠폰던전
+</footer>
+</body>
+</html>`;
+}
+
 /* ═══════════════════════════════════════════════════════
    HTML 템플릿 — 게임 전용 페이지
 ═══════════════════════════════════════════════════════ */
@@ -340,6 +559,7 @@ function buildGamePage(gameName, coupons, imageUrl, genre) {
 <meta property="og:type" content="website">
 ${imageUrl ? `<meta property="og:image" content="${imageUrl}">` : ''}
 <link rel="canonical" href="${SITE_URL}/game/${slug}.html">
+${couponCount === 0 ? '<meta name="robots" content="noindex, nofollow">' : ''}
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3292286283313303" crossorigin="anonymous"></script>
 <script type="application/ld+json">${JSON.stringify(schemaData)}</script>
 <style>
@@ -440,6 +660,15 @@ function buildSitemap(gamePages, guidePages, newsPages) {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.join('\n')}
 </urlset>`;
+}
+
+// 사이트맵 인덱스 (sitemap index)
+function buildSitemapIndex() {
+  const today = new Date().toISOString().split('T')[0];
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>${SITE_URL}/sitemap.xml</loc><lastmod>${today}</lastmod></sitemap>
+</sitemapindex>`;
 }
 
 function buildRobots() {
@@ -595,11 +824,30 @@ async function main() {
 
   let guidesSlugs = [], newsSlugs = [];
   try {
+    // 공략 정적 페이지 생성
     const gSnap = await db.collection('guides').get();
-    gSnap.forEach(d => { guidesSlugs.push(toSlug(d.data().title || '')); });
+    gSnap.forEach(d => {
+      const guide = Object.assign({id: d.id}, d.data());
+      const slug = toSlug(guide.title || '');
+      if (slug) {
+        gamePageFiles[`guide/${slug}.html`] = buildGuidePage(guide);
+        guidesSlugs.push(slug);
+      }
+    });
+    console.log(`  📖 공략 페이지 ${guidesSlugs.length}개 생성`);
+
+    // 뉴스 정적 페이지 생성
     const nSnap = await db.collection('news').get();
-    nSnap.forEach(d => { newsSlugs.push(toSlug(d.data().title || '')); });
-  } catch(e) {}
+    nSnap.forEach(d => {
+      const news = Object.assign({id: d.id}, d.data());
+      const slug = toSlug(news.title || '');
+      if (slug) {
+        gamePageFiles[`news/${slug}.html`] = buildNewsPage(news);
+        newsSlugs.push(slug);
+      }
+    });
+    console.log(`  📰 뉴스 페이지 ${newsSlugs.length}개 생성`);
+  } catch(e) { console.log('  ⚠️ 공략/뉴스 페이지 생성 실패:', e.message); }
 
   let success = 0, empty = 0, fail = 0;
 
@@ -661,7 +909,9 @@ async function main() {
   console.log(`✅ 완료! ${Math.floor(elapsed/60)}분 ${elapsed%60}초`);
   console.log(`  쿠폰 있는 게임: ${success}개 | 없음: ${empty}개 | 실패: ${fail}개`);
   console.log(`  Firebase 저장: ${allCoupons.length}개`);
-  console.log(`  SEO 페이지: ${gamePageSlugs.length}개`);
+  console.log(`  게임 페이지: ${gamePageSlugs.length}개`);
+  console.log(`  공략 페이지: ${guidesSlugs.length}개`);
+  console.log(`  뉴스 페이지: ${newsSlugs.length}개`);
   console.log('══════════════════════════════════════');
 }
 
