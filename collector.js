@@ -515,6 +515,8 @@ function buildGamePage(gameName, coupons, imageUrl, genre) {
   const year = new Date().getFullYear();
   const today = new Date().toLocaleDateString('ko-KR');
   const couponCount = coupons.length;
+  const activeCoupons = coupons.filter(c => !c.expire || c.expire === '무기한' || new Date(c.expire.replace(/\./g,'-')) > new Date());
+  const expiredCoupons = coupons.filter(c => c.expire && c.expire !== '무기한' && new Date(c.expire.replace(/\./g,'-')) <= new Date());
 
   const schemaData = {
     "@context": "https://schema.org",
@@ -530,19 +532,38 @@ function buildGamePage(gameName, coupons, imageUrl, genre) {
         {"@type":"ListItem","position":2,"name":"쿠폰","item":`${SITE_URL}/#coupon`},
         {"@type":"ListItem","position":3,"name":`${gameName} 쿠폰`,"item":`${SITE_URL}/game/${slug}.html`}
       ]
+    },
+    "mainEntity": {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type":"Question","name":`${gameName} 쿠폰 코드는 어디서 입력하나요?`,"acceptedAnswer":{"@type":"Answer","text":`게임 내 설정 메뉴 또는 공식 홈페이지 쿠폰 입력란에서 입력할 수 있습니다.`}},
+        {"@type":"Question","name":`${gameName} 쿠폰이 작동하지 않아요.`,"acceptedAnswer":{"@type":"Answer","text":"쿠폰 만료 여부, 대소문자 구분, 계정당 1회 제한을 확인해 주세요. 이미 사용한 코드는 재사용이 불가능합니다."}},
+      ]
     }
+  };
+
+  const statusBadge = (c) => {
+    if (!c.expire || c.expire === '무기한') return '<span style="background:rgba(62,207,142,.15);color:#3ecf8e;border:1px solid rgba(62,207,142,.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">✅ 사용가능</span>';
+    const d = new Date(c.expire.replace(/\./g,'-'));
+    const daysLeft = Math.ceil((d - new Date()) / 86400000);
+    if (daysLeft < 0) return '<span style="background:rgba(233,69,96,.15);color:#e94560;border:1px solid rgba(233,69,96,.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">⚠️ 만료추정</span>';
+    if (daysLeft < 7) return `<span style="background:rgba(245,166,35,.15);color:#f5a623;border:1px solid rgba(245,166,35,.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">⏰ D-${daysLeft}</span>`;
+    return '<span style="background:rgba(62,207,142,.15);color:#3ecf8e;border:1px solid rgba(62,207,142,.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">✅ 사용가능</span>';
   };
 
   const couponRows = coupons.map(c => `
     <div class="coupon-row">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        ${statusBadge(c)}
+        <span style="font-size:11px;color:#555">출처: ${c.source || '쿠폰던전'}</span>
+      </div>
       <div class="code-box">
         <span class="code-label">쿠폰 코드</span>
-        <span class="code-text" id="code-${c.code}">${c.code}</span>
-        <button class="copy-btn" onclick="copyCode('${c.code}')">복사</button>
+        <span class="code-text">${c.code}</span>
+        <button class="copy-btn" data-code="${c.code}" onclick="copyCode('${c.code}',this)">복사</button>
       </div>
       <div class="reward-text">🎁 ${c.reward || '인게임 보상'}</div>
       <div class="expire-text">⏰ 만료: ${c.expire || '무기한'}</div>
-      <div class="source-text">출처: ${c.source || '쿠폰던전'}</div>
     </div>`).join('');
 
   return `<!DOCTYPE html>
@@ -551,7 +572,7 @@ function buildGamePage(gameName, coupons, imageUrl, genre) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${gameName} 쿠폰 코드 ${year} 최신 — 쿠폰던전</title>
-<meta name="description" content="${gameName} ${year}년 최신 쿠폰 코드 ${couponCount}개 정리. 유효한 쿠폰만 모아드려요.">
+<meta name="description" content="${gameName} ${year}년 최신 쿠폰 코드 ${couponCount}개 정리. 유효한 쿠폰만 모아드려요. 복사 버튼으로 바로 사용하세요!">
 <meta name="keywords" content="${gameName} 쿠폰, ${gameName} 쿠폰코드, ${gameName} ${year}, 모바일게임 쿠폰">
 <meta property="og:title" content="${gameName} 쿠폰 코드 ${year} 최신 — 쿠폰던전">
 <meta property="og:description" content="${gameName} ${year}년 최신 쿠폰 코드 ${couponCount}개">
@@ -568,32 +589,49 @@ body{background:#09090f;color:#efefef;font-family:'Noto Sans KR',sans-serif;min-
 a{color:#e94560;text-decoration:none}
 header{background:#13131f;border-bottom:1px solid rgba(255,255,255,.07);padding:0 1.25rem;height:54px;display:flex;align-items:center;justify-content:space-between}
 .logo{font-size:18px;font-weight:800;color:#efefef}.logo span{color:#e94560}
-.home-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#aaa;padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer;text-decoration:none}
+.home-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#aaa;padding:6px 14px;border-radius:7px;font-size:12px;text-decoration:none}
 .ad-wrap{padding:8px 1.25rem;background:#13131f;border-bottom:1px solid rgba(255,255,255,.07);display:flex;justify-content:center}
 .container{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem}
 .breadcrumb{font-size:12px;color:#555;margin-bottom:1.5rem}
 .breadcrumb a{color:#aaa}.breadcrumb a:hover{color:#efefef}
-.game-header{display:flex;align-items:center;gap:16px;margin-bottom:2rem;background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.25rem}
+.game-header{display:flex;align-items:center;gap:16px;margin-bottom:1.5rem;background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.25rem}
 .game-icon{width:80px;height:80px;border-radius:16px;object-fit:cover;background:#1a1a2c;flex-shrink:0}
 .game-title{font-size:24px;font-weight:800;margin-bottom:4px}
-.game-meta{font-size:13px;color:#aaa}
-.section-title{font-size:14px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.game-meta{font-size:13px;color:#aaa;margin-bottom:8px}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap}
+.stat-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:4px 10px;font-size:11px;color:#aaa}
+.stat-item b{color:#efefef}
+.section-title{font-size:14px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin:1.5rem 0 1rem;display:flex;align-items:center;gap:8px}
 .section-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07)}
-.coupon-row{background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:10px}
-.code-box{display:flex;align-items:center;gap:10px;background:#09090f;border:1px solid rgba(255,255,255,.13);border-radius:8px;padding:10px 14px;margin-bottom:10px}
+.coupon-row{background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:10px;transition:border-color .2s}
+.coupon-row:hover{border-color:rgba(255,255,255,.15)}
+.code-box{display:flex;align-items:center;gap:10px;background:#09090f;border:1px solid rgba(255,255,255,.13);border-radius:8px;padding:10px 14px;margin-bottom:8px}
 .code-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.6px;flex-shrink:0}
 .code-text{font-family:monospace;font-size:15px;font-weight:700;color:#efefef;flex:1;letter-spacing:1px}
-.copy-btn{background:#e94560;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}
+.copy-btn{background:#e94560;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;transition:all .2s}
 .copy-btn:hover{background:#c73652}.copy-btn.done{background:#3ecf8e;color:#000}
 .reward-text{font-size:13px;color:#aaa;margin-bottom:4px}
 .expire-text{font-size:12px;color:#555}
-.source-text{font-size:11px;color:#444;margin-top:4px}
+.how-box{background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.how-title{font-size:13px;font-weight:700;color:#efefef;margin-bottom:8px}
+.how-text{font-size:13px;color:#aaa;line-height:1.8}
+.faq-item{background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:8px}
+.faq-q{font-size:13px;font-weight:700;color:#efefef;margin-bottom:6px}
+.faq-q::before{content:'Q. ';color:#e94560}
+.faq-a{font-size:13px;color:#aaa;line-height:1.7}
+.faq-a::before{content:'A. ';color:#3ecf8e;font-weight:700}
+.related-box{background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-top:1rem}
+.related-title{font-size:13px;font-weight:700;color:#aaa;margin-bottom:12px}
+.related-links{display:flex;flex-wrap:wrap;gap:8px}
+.related-link{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#aaa;padding:6px 12px;border-radius:6px;font-size:12px;text-decoration:none;transition:all .2s}
+.related-link:hover{border-color:#e94560;color:#e94560}
 .empty{text-align:center;color:#555;padding:2rem;font-size:14px}
-.updated{font-size:11px;color:#444;margin-top:1.5rem;text-align:center}
+.verified-bar{background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.2);border-radius:8px;padding:8px 14px;font-size:12px;color:#3ecf8e;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(50px);background:#3ecf8e;color:#000;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:700;opacity:0;transition:all .3s;pointer-events:none;z-index:9999}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 footer{background:#13131f;border-top:1px solid rgba(255,255,255,.07);padding:1.5rem;text-align:center;color:#555;font-size:12px;margin-top:3rem}
 footer a{color:#aaa}
+@media(max-width:560px){.game-header{flex-direction:column;text-align:center}.stat-row{justify-content:center}}
 </style>
 </head>
 <body>
@@ -607,34 +645,82 @@ footer a{color:#aaa}
 </div>
 <div class="container">
   <nav class="breadcrumb">
-    <a href="/">쿠폰던전</a> › <a href="/#coupon">쿠폰</a> › ${gameName}
+    <a href="/">쿠폰던전</a> › <a href="/#coupon">쿠폰</a> › <a href="/game/${slug}.html">${gameName}</a>
   </nav>
+
   <div class="game-header">
     ${imageUrl ? `<img class="game-icon" src="${imageUrl}" alt="${gameName} 아이콘">` : `<div class="game-icon" style="display:flex;align-items:center;justify-content:center;font-size:36px">🎮</div>`}
-    <div>
-      <div class="game-title">${gameName}</div>
-      <div class="game-meta">장르: ${genre || 'RPG'} &nbsp;·&nbsp; 쿠폰 ${couponCount}개 &nbsp;·&nbsp; 업데이트: ${today}</div>
+    <div style="flex:1">
+      <div class="game-title">${gameName} 쿠폰</div>
+      <div class="game-meta">장르: ${genre || 'RPG'}</div>
+      <div class="stat-row">
+        <span class="stat-item">쿠폰 <b>${couponCount}개</b></span>
+        <span class="stat-item">사용가능 <b style="color:#3ecf8e">${activeCoupons.length}개</b></span>
+        <span class="stat-item">업데이트 <b>${today}</b></span>
+      </div>
     </div>
   </div>
+
+  <div class="verified-bar">
+    ✅ 쿠폰던전이 ${today} 기준으로 검증한 코드만 제공합니다. 만료 코드는 자동 삭제됩니다.
+  </div>
+
   <div class="section-title">🎫 ${gameName} 쿠폰 코드 ${year} 최신</div>
-  ${couponCount > 0 ? couponRows : '<div class="empty">현재 등록된 쿠폰이 없어요.</div>'}
-  <div class="updated">마지막 업데이트: ${today} · 매일 자동 수집</div>
+
+  ${couponCount > 0 ? couponRows : '<div class="empty">현재 등록된 쿠폰이 없어요.<br>새 쿠폰이 추가되면 자동으로 업데이트됩니다.</div>'}
+
+  <div class="section-title">📋 쿠폰 입력 방법</div>
+  <div class="how-box">
+    <div class="how-title">🎮 ${gameName} 쿠폰 입력하는 방법</div>
+    <div class="how-text">위의 쿠폰 코드를 복사한 후, 게임 내 설정 메뉴 또는 공식 홈페이지 쿠폰 입력란에 붙여넣기 하세요. 코드는 대소문자를 구분하며, 계정당 1회만 사용 가능합니다.</div>
+  </div>
+
+  <div class="section-title">❓ 자주 묻는 질문</div>
+  <div class="faq-item">
+    <div class="faq-q">${gameName} 쿠폰이 작동하지 않아요.</div>
+    <div class="faq-a">쿠폰 만료 여부, 대소문자 구분, 계정당 1회 제한을 확인해 주세요. 이미 사용한 코드는 재사용이 불가능합니다.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">${gameName} 새 쿠폰은 언제 나오나요?</div>
+    <div class="faq-a">쿠폰던전은 매일 자동으로 새 쿠폰을 수집합니다. 이 페이지를 즐겨찾기하고 정기적으로 확인해 주세요.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">쿠폰 보상은 언제 지급되나요?</div>
+    <div class="faq-a">대부분의 게임은 쿠폰 입력 직후 우편함으로 보상이 지급됩니다. 게임에 따라 최대 24시간이 걸릴 수 있습니다.</div>
+  </div>
+
+  <div class="related-box">
+    <div class="related-title">🔗 관련 링크</div>
+    <div class="related-links">
+      <a class="related-link" href="/">🎫 전체 쿠폰 보기</a>
+      <a class="related-link" href="/#guide">📖 게임 공략 보기</a>
+      <a class="related-link" href="/#news">📰 게임 뉴스 보기</a>
+    </div>
+  </div>
+
+  <div style="font-size:11px;color:#444;margin-top:1.5rem;text-align:center">
+    마지막 업데이트: ${today} · 매일 자동 수집 및 검증 · 쿠폰던전
+  </div>
 </div>
+
 <footer>
   <a href="/">쿠폰던전</a> &nbsp;·&nbsp;
   <a href="/#terms">이용약관</a> &nbsp;·&nbsp;
-  <a href="/#terms">개인정보처리방침</a><br><br>
-  © ${year} 쿠폰던전
+  <a href="/#terms">개인정보처리방침</a> &nbsp;·&nbsp;
+  <a href="mailto:krhym00001@gmail.com">문의</a><br><br>
+  © ${year} 쿠폰던전 — 쿠폰 정보는 각 게임사 공식 채널 기준입니다.
 </footer>
+
 <div class="toast" id="toast"></div>
 <script>
-function copyCode(code) {
+function copyCode(code, btn) {
   navigator.clipboard.writeText(code).catch(function(){
     var el = document.createElement('textarea');
     el.value = code; document.body.appendChild(el);
     el.select(); document.execCommand('copy');
     document.body.removeChild(el);
   });
+  if (btn) { btn.textContent = '✓ 복사됨'; btn.classList.add('done'); setTimeout(function(){ btn.textContent = '복사'; btn.classList.remove('done'); }, 2000); }
   var t = document.getElementById('toast');
   t.textContent = '✅ ' + code + ' 복사됐어요!';
   t.classList.add('show');
