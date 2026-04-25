@@ -892,6 +892,71 @@ function buildRobots() {
 }
 
 /* ═══════════════════════════════════════════════════════
+   RSS 피드 생성 (네이버/구글 구독)
+═══════════════════════════════════════════════════════ */
+function buildRSS(guides, news) {
+  const now = new Date().toUTCString();
+  const items = [];
+
+  // 뉴스 아이템
+  news.forEach(n => {
+    const slug = n.title.replace(/[:\s]+/g, '-').replace(/[^a-z0-9가-힣-]/gi, '').replace(/-+/g, '-').toLowerCase();
+    const pubDate = n.date ? new Date(n.date.replace(/\./g, '-')).toUTCString() : now;
+    items.push({
+      title: n.title,
+      link: `${SITE_URL}/news/${slug}.html`,
+      description: n.content ? n.content.substring(0, 200) + '...' : n.title,
+      pubDate,
+      category: '게임뉴스',
+    });
+  });
+
+  // 공략 아이템
+  guides.forEach(g => {
+    const slug = g.title.replace(/[:\s]+/g, '-').replace(/[^a-z0-9가-힣-]/gi, '').replace(/-+/g, '-').toLowerCase();
+    const pubDate = g.createdAt ? new Date(g.createdAt).toUTCString() : now;
+    items.push({
+      title: g.title,
+      link: `${SITE_URL}/guide/${slug}.html`,
+      description: g.content ? g.content.substring(0, 200) + '...' : g.title,
+      pubDate,
+      category: '게임공략',
+    });
+  });
+
+  // 날짜 순 정렬
+  items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+  const itemsXml = items.slice(0, 50).map(item => `
+  <item>
+    <title><![CDATA[${item.title}]]></title>
+    <link>${item.link}</link>
+    <description><![CDATA[${item.description}]]></description>
+    <pubDate>${item.pubDate}</pubDate>
+    <category><![CDATA[${item.category}]]></category>
+    <guid isPermaLink="true">${item.link}</guid>
+  </item>`).join('');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>쿠폰던전 — 국내 모바일게임 쿠폰 모음</title>
+    <link>${SITE_URL}</link>
+    <description>리니지W, 원신, 메이플스토리M 등 국내 모바일게임 최신 쿠폰 코드와 공략을 한곳에서 확인하세요.</description>
+    <language>ko</language>
+    <lastBuildDate>${now}</lastBuildDate>
+    <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml"/>
+    <image>
+      <url>${SITE_URL}/icon.png</url>
+      <title>쿠폰던전</title>
+      <link>${SITE_URL}</link>
+    </image>
+    ${itemsXml}
+  </channel>
+</rss>`;
+}
+
+/* ═══════════════════════════════════════════════════════
    GitHub Push
 ═══════════════════════════════════════════════════════ */
 async function pushToGitHub(files) {
@@ -921,6 +986,228 @@ async function pushToGitHub(files) {
   } catch(e) {
     console.error('  ❌ GitHub push 실패:', e.message);
   }
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   Google Gemini API - 공략/뉴스 자동 생성
+═══════════════════════════════════════════════════════ */
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+async function callGemini(prompt) {
+  if (!GEMINI_API_KEY) {
+    console.log('    ⚠️ GEMINI_API_KEY 없음 - 스킵');
+    return null;
+  }
+  try {
+    const body = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+      }
+    });
+
+    const result = await new Promise((resolve, reject) => {
+      const url = new URL(GEMINI_URL);
+      const req = https.request({
+        hostname: url.hostname,
+        path: url.pathname + url.search,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+        }
+      }, (res) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', c => data += c);
+        res.on('end', () => {
+          try { resolve(JSON.parse(data)); }
+          catch(e) { reject(e); }
+        });
+      });
+      req.on('error', reject);
+      req.setTimeout(30000, () => { req.destroy(); reject(new Error('timeout')); });
+      req.write(body);
+      req.end();
+    });
+
+    if (result.candidates && result.candidates[0]) {
+      return result.candidates[0].content.parts[0].text;
+    }
+    return null;
+  } catch(e) {
+    console.log(`    ⚠️ Gemini 호출 실패: ${e.message}`);
+    return null;
+  }
+}
+
+// 게임 공략 자동 생성
+async function generateGuide(gameName, genre) {
+  const prompt = `당신은 한국 모바일게임 전문 공략 작가입니다.
+"${gameName}" 게임의 공략 글을 작성해주세요.
+
+요구사항:
+- 한국어로 작성
+- 2000자 이상 상세하게 작성
+- 실제 도움이 되는 구체적인 팁 포함
+- 마크다운 형식 사용 (## 제목, ### 소제목)
+- 초보자부터 중급자까지 도움이 되는 내용
+- 마지막에 쿠폰 코드 입력 방법 언급
+
+다음 구조로 작성:
+1. 게임 소개 (2~3문장)
+2. 기본 시스템 설명
+3. 초보자 필수 팁 3~5가지
+4. 효율적인 성장 방법
+5. 쿠폰 코드 활용법
+
+JSON 형식으로 응답:
+{
+  "title": "제목 (SEO 최적화된 60자 이내)",
+  "cat": "카테고리 (초보가이드/공략/팁/무과금 중 하나)",
+  "icon": "관련 이모지 1개",
+  "content": "본문 내용"
+}
+
+JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
+
+  const result = await callGemini(prompt);
+  if (!result) return null;
+
+  try {
+    const clean = result.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    return {
+      game: gameName,
+      title: parsed.title,
+      cat: parsed.cat || '공략',
+      icon: parsed.icon || '🎮',
+      content: parsed.content,
+      views: 0,
+      createdAt: new Date().toISOString(),
+    };
+  } catch(e) {
+    console.log(`    ⚠️ Gemini 응답 파싱 실패: ${e.message}`);
+    return null;
+  }
+}
+
+// 게임 뉴스 자동 생성
+async function generateNews(gameName) {
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+
+  const prompt = `당신은 한국 모바일게임 뉴스 작가입니다.
+"${gameName}" 게임의 최신 업데이트 뉴스 기사를 작성해주세요.
+
+요구사항:
+- 한국어로 작성
+- 500자 이상 작성
+- 실제 게임 업데이트 내용처럼 자연스럽게 작성
+- 신규 콘텐츠, 이벤트, 캐릭터 등 포함
+- 마지막에 쿠폰 코드 확인 권유 문구 포함
+
+JSON 형식으로 응답:
+{
+  "title": "뉴스 제목 (60자 이내, 흥미롭게)",
+  "icon": "관련 이모지 1개",
+  "content": "뉴스 본문 내용"
+}
+
+JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
+
+  const result = await callGemini(prompt);
+  if (!result) return null;
+
+  try {
+    const clean = result.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    return {
+      game: gameName,
+      title: parsed.title,
+      icon: parsed.icon || '📰',
+      content: parsed.content,
+      date: dateStr,
+      createdAt: new Date().toISOString(),
+    };
+  } catch(e) {
+    console.log(`    ⚠️ Gemini 뉴스 파싱 실패: ${e.message}`);
+    return null;
+  }
+}
+
+// 자동 공략/뉴스 생성 메인 함수
+async function autoGenerateContent() {
+  if (!GEMINI_API_KEY) {
+    console.log('  ⚠️ GEMINI_API_KEY 없음 - 자동 생성 스킵');
+    return;
+  }
+
+  console.log('\n🤖 Gemini AI 공략/뉴스 자동 생성 시작...');
+
+  // 공략 생성 대상 게임 (인기 게임 위주, 매일 2개씩)
+  const guideTargets = [
+    { name: '원신', genre: 'rpg' },
+    { name: '붕괴: 스타레일', genre: 'rpg' },
+    { name: '메이플스토리M', genre: 'rpg' },
+    { name: '나 혼자만 레벨업: ARISE', genre: 'rpg' },
+    { name: '에픽세븐', genre: 'rpg' },
+    { name: '쿠키런: 킹덤', genre: 'casual' },
+    { name: '블루 아카이브', genre: 'rpg' },
+    { name: '라그나로크 오리진', genre: 'rpg' },
+    { name: 'AFK 저니', genre: 'rpg' },
+    { name: '젠레스 존 제로', genre: 'rpg' },
+  ];
+
+  // 오늘 날짜 기반으로 2개 선택 (매일 다른 게임)
+  const today = new Date().getDate();
+  const idx1 = today % guideTargets.length;
+  const idx2 = (today + 1) % guideTargets.length;
+  const selectedGames = [guideTargets[idx1], guideTargets[idx2]];
+
+  // 공략 생성
+  for (const game of selectedGames) {
+    try {
+      console.log(`  📖 ${game.name} 공략 생성 중...`);
+      const guide = await generateGuide(game.name, game.genre);
+      if (guide) {
+        await db.collection('guides').add(guide);
+        console.log(`    ✅ 공략 생성 완료: ${guide.title.substring(0, 40)}...`);
+      }
+      await delay(2000);
+    } catch(e) {
+      console.log(`    ❌ ${game.name} 공략 생성 실패: ${e.message}`);
+    }
+  }
+
+  // 뉴스 생성 (매일 2개)
+  const newsTargets = [
+    '원신', '붕괴: 스타레일', '메이플스토리M', '리니지W',
+    '나 혼자만 레벨업: ARISE', '젠레스 존 제로', '에픽세븐',
+    '쿠키런: 킹덤', 'AFK 저니', '블루 아카이브'
+  ];
+
+  const nIdx1 = (today + 3) % newsTargets.length;
+  const nIdx2 = (today + 4) % newsTargets.length;
+
+  for (const gameName of [newsTargets[nIdx1], newsTargets[nIdx2]]) {
+    try {
+      console.log(`  📰 ${gameName} 뉴스 생성 중...`);
+      const news = await generateNews(gameName);
+      if (news) {
+        await db.collection('news').add(news);
+        console.log(`    ✅ 뉴스 생성 완료: ${news.title.substring(0, 40)}...`);
+      }
+      await delay(2000);
+    } catch(e) {
+      console.log(`    ❌ ${gameName} 뉴스 생성 실패: ${e.message}`);
+    }
+  }
+
+  console.log('  🤖 AI 콘텐츠 자동 생성 완료!');
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1141,12 +1428,28 @@ async function main() {
     console.log(`  ⚠️ 호요버스 수집 실패: ${e.message}`);
   }
 
+  // Gemini AI 공략/뉴스 자동 생성
+  await autoGenerateContent();
+
   console.log(`\n💾 Firebase 저장 중... (${allCoupons.length}개)`);
   await saveToDB(allCoupons);
 
-  console.log('\n🗺️ sitemap.xml 생성 중...');
+  console.log('\n🗺️ sitemap.xml + RSS 생성 중...');
   gamePageFiles['sitemap.xml'] = buildSitemap(gamePageSlugs, guidesSlugs, newsSlugs);
   gamePageFiles['robots.txt'] = buildRobots();
+
+  // RSS 피드 생성
+  try {
+    const gSnap2 = await db.collection('guides').get();
+    const nSnap2 = await db.collection('news').get();
+    const guidesData = [], newsData = [];
+    gSnap2.forEach(d => guidesData.push(d.data()));
+    nSnap2.forEach(d => newsData.push(d.data()));
+    gamePageFiles['rss.xml'] = buildRSS(guidesData, newsData);
+    console.log(`  📡 RSS 피드 생성 완료 (공략 ${guidesData.length}개 + 뉴스 ${newsData.length}개)`);
+  } catch(e) {
+    console.log('  ⚠️ RSS 생성 실패:', e.message);
+  }
 
   if (process.env.PAT_TOKEN) {
     await pushToGitHub(gamePageFiles);
