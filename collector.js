@@ -996,10 +996,12 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 async function callGemini(prompt) {
-  if (!GEMINI_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey.trim() === '') {
     console.log('    ⚠️ GEMINI_API_KEY 없음 - 스킵');
     return null;
   }
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
   try {
     const body = JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
@@ -1010,7 +1012,7 @@ async function callGemini(prompt) {
     });
 
     const result = await new Promise((resolve, reject) => {
-      const url = new URL(GEMINI_URL);
+      const url = new URL(geminiUrl);
       const req = https.request({
         hostname: url.hostname,
         path: url.pathname + url.search,
@@ -1141,7 +1143,9 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
 // 자동 공략/뉴스 생성 메인 함수
 async function autoGenerateContent() {
-  if (!GEMINI_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  console.log('  🔑 GEMINI_API_KEY 확인:', apiKey ? `있음 (${apiKey.substring(0,8)}...)` : '없음');
+  if (!apiKey || apiKey.trim() === '') {
     console.log('  ⚠️ GEMINI_API_KEY 없음 - 자동 생성 스킵');
     return;
   }
