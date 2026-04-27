@@ -861,14 +861,226 @@ function copyCode(code, btn) {
 </html>`;
 }
 
+
+/* ═══════════════════════════════════════════════════════
+   사전예약 게임 자동 수집 (인벤 + 게임메카)
+═══════════════════════════════════════════════════════ */
+
+// 사전예약 정적 페이지 생성
+function buildPreorderPage(game) {
+  const slug = toSlug(game.name);
+  const year = new Date().getFullYear();
+  const today = new Date().toLocaleDateString('ko-KR');
+  const dday = game.releaseDate ? Math.ceil((new Date(game.releaseDate.replace(/\./g,'-')) - new Date()) / 86400000) : null;
+
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": game.name,
+    "description": game.desc || `${game.name} 사전예약 정보`,
+    "url": `${SITE_URL}/preorder/${slug}.html`,
+    "genre": game.genre || 'RPG',
+    "publisher": {"@type": "Organization", "name": game.dev || ''},
+    "datePublished": game.releaseDate || '',
+  };
+
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${game.name} 사전예약 — 출시일·보상·링크 총정리 ${year}</title>
+<meta name="description" content="${game.name} 사전예약 정보. 출시 예정일, 사전예약 보상, 공식 링크를 확인하세요. ${game.dev || ''}">
+<meta property="og:title" content="${game.name} 사전예약 — 쿠폰던전">
+<meta property="og:description" content="${game.name} 사전예약 정보. 출시 예정일 ${game.releaseDate || '미정'}, 사전예약자 ${game.preregCount || '0'}명">
+<meta property="og:url" content="${SITE_URL}/preorder/${slug}.html">
+${game.imageUrl ? `<meta property="og:image" content="${game.imageUrl}">` : ''}
+<link rel="canonical" href="${SITE_URL}/preorder/${slug}.html">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3292286283313303" crossorigin="anonymous"></script>
+<script type="application/ld+json">${JSON.stringify(schemaData)}</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#09090f;color:#efefef;font-family:'Noto Sans KR',sans-serif;min-height:100vh;line-height:1.8}
+a{color:#e94560;text-decoration:none}
+header{background:#13131f;border-bottom:1px solid rgba(255,255,255,.07);padding:0 1.25rem;height:54px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:18px;font-weight:800;color:#efefef}.logo span{color:#e94560}
+.home-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#aaa;padding:6px 14px;border-radius:7px;font-size:12px}
+.ad-wrap{padding:8px 1.25rem;background:#13131f;border-bottom:1px solid rgba(255,255,255,.07);display:flex;justify-content:center}
+.container{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem}
+.breadcrumb{font-size:12px;color:#555;margin-bottom:1.5rem}.breadcrumb a{color:#aaa}
+.game-header{background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;display:flex;gap:20px;align-items:center}
+.game-icon{width:90px;height:90px;border-radius:18px;object-fit:cover;background:#1a1a2c;flex-shrink:0}
+.game-title{font-size:24px;font-weight:900;margin-bottom:6px}
+.game-dev{font-size:13px;color:#aaa;margin-bottom:10px}
+.badge-row{display:flex;gap:8px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.badge-dday{background:rgba(233,69,96,.2);color:#e94560;border:1px solid rgba(233,69,96,.3)}
+.badge-genre{background:rgba(155,93,229,.2);color:#9b5de5;border:1px solid rgba(155,93,229,.3)}
+.badge-count{background:rgba(62,207,142,.15);color:#3ecf8e;border:1px solid rgba(62,207,142,.25)}
+.section{background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.section h2{font-size:15px;font-weight:800;color:#efefef;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section p{font-size:14px;color:#ccc;line-height:1.9}
+.preorder-btn{display:block;background:#e94560;color:#fff;text-align:center;padding:14px;border-radius:10px;font-size:16px;font-weight:800;margin-bottom:1rem;transition:all .2s}
+.preorder-btn:hover{background:#c73652;color:#fff}
+.info-row{display:flex;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.info-row:last-child{border:none}
+.info-label{font-size:13px;color:#aaa;width:120px;flex-shrink:0}
+.info-value{font-size:13px;color:#efefef}
+.related-box{background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-top:1rem}
+.related-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.related-link{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#aaa;padding:6px 12px;border-radius:6px;font-size:12px;transition:all .2s}
+.related-link:hover{border-color:#e94560;color:#e94560}
+footer{background:#13131f;border-top:1px solid rgba(255,255,255,.07);padding:1.5rem;text-align:center;color:#555;font-size:12px;margin-top:3rem}
+footer a{color:#aaa}
+@media(max-width:560px){.game-header{flex-direction:column;text-align:center}.badge-row{justify-content:center}}
+</style>
+</head>
+<body>
+<header>
+  <a href="/" class="logo">쿠폰<span>던전</span></a>
+  <a href="/" class="home-btn">← 전체 보기</a>
+</header>
+<div class="ad-wrap">
+  <ins class="adsbygoogle" style="display:block;width:100%;max-width:728px" data-ad-client="ca-pub-3292286283313303" data-ad-slot="auto" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="/">쿠폰던전</a> › <a href="/#preorder">사전예약</a> › ${game.name}
+  </nav>
+
+  <div class="game-header">
+    ${game.imageUrl ? `<img class="game-icon" src="${game.imageUrl}" alt="${game.name}">` : `<div class="game-icon" style="display:flex;align-items:center;justify-content:center;font-size:40px">🎮</div>`}
+    <div style="flex:1">
+      <h1 class="game-title">${game.name}</h1>
+      <div class="game-dev">${game.dev || ''} · ${game.genre || 'RPG'}</div>
+      <div class="badge-row">
+        ${dday !== null && dday >= 0 ? `<span class="badge badge-dday">⏰ D-${dday}</span>` : '<span class="badge badge-dday">📅 출시일 미정</span>'}
+        <span class="badge badge-genre">${game.genre || 'RPG'}</span>
+        ${game.preregCount ? `<span class="badge badge-count">👥 ${Number(game.preregCount).toLocaleString()}명 사전예약</span>` : ''}
+      </div>
+    </div>
+  </div>
+
+  ${game.preorderUrl ? `<a href="${game.preorderUrl}" target="_blank" rel="noopener" class="preorder-btn">🎮 지금 사전예약 하기 →</a>` : ''}
+
+  <div class="section">
+    <h2>📋 게임 정보</h2>
+    <div class="info-row"><span class="info-label">게임명</span><span class="info-value">${game.name}</span></div>
+    <div class="info-row"><span class="info-label">개발사</span><span class="info-value">${game.dev || '미정'}</span></div>
+    <div class="info-row"><span class="info-label">장르</span><span class="info-value">${game.genre || 'RPG'}</span></div>
+    <div class="info-row"><span class="info-label">출시 예정일</span><span class="info-value">${game.releaseDate || '미정'}</span></div>
+    <div class="info-row"><span class="info-label">플랫폼</span><span class="info-value">${game.platform || 'iOS / Android'}</span></div>
+    ${game.preregCount ? `<div class="info-row"><span class="info-label">사전예약자</span><span class="info-value">${Number(game.preregCount).toLocaleString()}명</span></div>` : ''}
+  </div>
+
+  ${game.desc ? `
+  <div class="section">
+    <h2>🎮 게임 소개</h2>
+    <p>${game.desc}</p>
+  </div>` : ''}
+
+  ${game.reward ? `
+  <div class="section">
+    <h2>🎁 사전예약 보상</h2>
+    <p>${game.reward}</p>
+  </div>` : ''}
+
+  <div class="related-box">
+    <div style="font-size:13px;font-weight:700;color:#aaa">🔗 관련 링크</div>
+    <div class="related-links">
+      <a class="related-link" href="/">🎫 전체 쿠폰 보기</a>
+      <a class="related-link" href="/#preorder">📋 전체 사전예약</a>
+      ${game.preorderUrl ? `<a class="related-link" href="${game.preorderUrl}" target="_blank">🎮 공식 사전예약</a>` : ''}
+    </div>
+  </div>
+
+  <div style="font-size:11px;color:#444;margin-top:1.5rem;text-align:center">
+    마지막 업데이트: ${today} · 정보는 공식 발표 기준이며 변경될 수 있습니다.
+  </div>
+</div>
+<footer>
+  <a href="/">쿠폰던전</a> &nbsp;·&nbsp; <a href="/about.html">소개</a> &nbsp;·&nbsp; <a href="/contact.html">문의</a><br><br>
+  © ${year} 쿠폰던전
+</footer>
+</body>
+</html>`;
+}
+
+// 인벤에서 사전예약 게임 수집
+async function collectPreorderGames() {
+  console.log('\n📋 사전예약 게임 자동 수집 중...');
+  const games = [];
+
+  try {
+    const html = await fetchUrl('https://www.inven.co.kr/webzine/schedule/');
+    // 출시 예정 게임 파싱
+    const gameRe = /<div[^>]*class="[^"]*game[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
+    const titleRe = /<(?:h[1-6]|strong|b)[^>]*>([^<]{3,30})<\/(?:h[1-6]|strong|b)>/i;
+    const dateRe = /(\d{2,4})[.\-년](\d{1,2})[.\-월](\d{0,2})/;
+
+    // 간단한 게임명 추출
+    const simpleRe = /출시예정[^"]*"[^"]*"([^"]+)"/gi;
+    let m;
+
+    // 페이지에서 날짜와 게임명 패턴 찾기
+    const lines = html.split('\n');
+    for (const line of lines) {
+      if (line.includes('출시') && line.includes('예약')) {
+        const title = line.match(titleRe);
+        const date = line.match(dateRe);
+        if (title && title[1].length > 1 && title[1].length < 30) {
+          games.push({
+            name: title[1].trim(),
+            releaseDate: date ? `${date[1]}.${String(date[2]).padStart(2,'0')}.${String(date[3]||'01').padStart(2,'0')}` : null,
+            source: '인벤',
+          });
+        }
+      }
+    }
+  } catch(e) {
+    console.log(`  ⚠️ 인벤 수집 실패: ${e.message}`);
+  }
+
+  // Firebase pending 컬렉션에 저장 (중복 제거)
+  if (games.length > 0) {
+    try {
+      const existing = await db.collection('preorders_pending').get();
+      const existingNames = new Set();
+      existing.forEach(d => existingNames.add(d.data().name));
+
+      const approved = await db.collection('preorders').get();
+      approved.forEach(d => existingNames.add(d.data().name));
+
+      let added = 0;
+      for (const game of games) {
+        if (!existingNames.has(game.name)) {
+          await db.collection('preorders_pending').add({
+            ...game,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+          });
+          added++;
+        }
+      }
+      if (added > 0) console.log(`  ✅ 사전예약 후보 ${added}개 추가 (관리자 승인 대기)`);
+    } catch(e) {
+      console.log(`  ⚠️ 사전예약 저장 실패: ${e.message}`);
+    }
+  }
+
+  return games;
+}
+
 /* ═══════════════════════════════════════════════════════
    sitemap.xml 생성
 ═══════════════════════════════════════════════════════ */
-function buildSitemap(gamePages, guidePages, newsPages) {
+function buildSitemap(gamePages, guidePages, newsPages, preorderPages = []) {
   const today = new Date().toISOString().split('T')[0];
   const urls = [
     `  <url><loc>${SITE_URL}/</loc><lastmod>${today}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>`,
     ...gamePages.map(slug => `  <url><loc>${SITE_URL}/game/${slug}.html</loc><lastmod>${today}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>`),
+    ...preorderPages.map(slug => `  <url><loc>${SITE_URL}/preorder/${slug}.html</loc><lastmod>${today}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>`),
     ...guidePages.map(slug => `  <url><loc>${SITE_URL}/guide/${slug}.html</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`),
     ...newsPages.map(slug => `  <url><loc>${SITE_URL}/news/${slug}.html</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`),
   ];
@@ -1331,7 +1543,22 @@ async function main() {
 
   let guidesSlugs = [], newsSlugs = [];
   try {
-    // 공략 정적 페이지 생성
+    // 사전예약 정적 페이지 생성
+    try {
+      const pSnap = await db.collection('preorders').get();
+      const preorderSlugs = [];
+      pSnap.forEach(d => {
+        const game = Object.assign({id: d.id}, d.data());
+        const slug = toSlug(game.name || '');
+        if (slug) {
+          gamePageFiles[`preorder/${slug}.html`] = buildPreorderPage(game);
+          preorderSlugs.push(slug);
+        }
+      });
+      console.log(`  🎮 사전예약 페이지 ${preorderSlugs.length}개 생성`);
+    } catch(e) { console.log('  ⚠️ 사전예약 페이지 생성 실패:', e.message); }
+
+  // 공략 정적 페이지 생성
     const gSnap = await db.collection('guides').get();
     gSnap.forEach(d => {
       const guide = Object.assign({id: d.id}, d.data());
@@ -1432,6 +1659,9 @@ async function main() {
     console.log(`  ⚠️ 호요버스 수집 실패: ${e.message}`);
   }
 
+  // 사전예약 게임 자동 수집
+  await collectPreorderGames();
+
   // Gemini AI 공략/뉴스 자동 생성
   await autoGenerateContent();
 
@@ -1439,7 +1669,8 @@ async function main() {
   await saveToDB(allCoupons);
 
   console.log('\n🗺️ sitemap.xml + RSS 생성 중...');
-  gamePageFiles['sitemap.xml'] = buildSitemap(gamePageSlugs, guidesSlugs, newsSlugs);
+  const preorderSlugs2 = Object.keys(gamePageFiles).filter(k=>k.startsWith('preorder/')).map(k=>k.replace('preorder/','').replace('.html',''));
+  gamePageFiles['sitemap.xml'] = buildSitemap(gamePageSlugs, guidesSlugs, newsSlugs, preorderSlugs2);
   gamePageFiles['robots.txt'] = buildRobots();
 
   // RSS 피드 생성
