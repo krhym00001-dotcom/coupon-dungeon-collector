@@ -486,20 +486,58 @@ async function fetchItunesImage(gameName) {
 /* ═══════════════════════════════════════════════════════
    게임 이미지 가져오기 (iTunes 우선 → 블루스택 폴백)
 ═══════════════════════════════════════════════════════ */
+async function fetchGooglePlayImage(gameName) {
+  // Google Play 검색으로 이미지 가져오기
+  try {
+    const searchName = GAME_EN_NAME[gameName] || gameName;
+    const searchUrl = `https://play.google.com/store/search?q=${encodeURIComponent(searchName)}&c=apps&hl=ko`;
+    const html = await fetchUrl(searchUrl);
+
+    // 앱 아이콘 이미지 패턴
+    const iconMatch = html.match(/src="(https:\/\/play-lh\.googleusercontent\.com\/[^"]+)"[^>]*alt="[^"]*"/);
+    if (iconMatch) {
+      // 고화질로 변환 (=w512-h512 추가)
+      const imgUrl = iconMatch[1].replace(/=w\d+-h\d+/, '=w512-h512').replace(/=s\d+/, '=s512');
+      console.log(`    🎮 Google Play: ${gameName} → ✓`);
+      return imgUrl;
+    }
+
+    // 두 번째 패턴 시도
+    const iconMatch2 = html.match(/https:\/\/play-lh\.googleusercontent\.com\/[^"'\s]+/);
+    if (iconMatch2) {
+      const imgUrl = iconMatch2[0].replace(/=w\d+-h\d+/, '=w512-h512');
+      console.log(`    🎮 Google Play (2): ${gameName} → ✓`);
+      return imgUrl;
+    }
+    return null;
+  } catch(e) {
+    return null;
+  }
+}
+
 async function fetchGameImage(appPageUrl, gameName) {
   // 1. iTunes API 우선 (합법적, 고화질 512px)
   const itunesUrl = await fetchItunesImage(gameName);
   if (itunesUrl) return { imageUrl: itunesUrl, packageName: null };
   await delay(300);
 
-  // 2. iTunes 실패 시 블루스택 폴백
+  // 2. Google Play 폴백
+  const googlePlayUrl = await fetchGooglePlayImage(gameName);
+  if (googlePlayUrl) return { imageUrl: googlePlayUrl, packageName: null };
+  await delay(300);
+
+  // 3. 블루스택 폴백
   if (!appPageUrl) return { imageUrl: null, packageName: null };
   try {
     const html = await fetchUrl(appPageUrl);
     const pkgMatch = html.match(/app_pkg=([a-z][a-z0-9._]+)/i);
     const packageName = pkgMatch ? pkgMatch[1] : null;
     const iconMatch = html.match(/src="(https:\/\/cdn-icon\.bluestacks\.com\/[^"]+)"/);
-    return { imageUrl: iconMatch ? iconMatch[1] : null, packageName };
+    if (iconMatch) {
+      console.log(`    🔵 블루스택: ${gameName} → ✓`);
+      return { imageUrl: iconMatch[1], packageName };
+    }
+    return { imageUrl: null, packageName };
   } catch(e) { return { imageUrl: null, packageName: null }; }
 }
 
