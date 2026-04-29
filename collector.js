@@ -73,6 +73,82 @@ const GAME_EN_NAME = {
   '레이드: 그림자의 전설': 'RAID: Shadow Legends',
   '스텔라 소라': '스텔라 소라',
   '스카이: 빛의 아이들': 'Sky: 빛의 아이들',
+  // 이미지 없는 게임 추가 매핑
+  '그놈은 드래곤': '그놈은 드래곤',
+  '냥코 대전쟁': '냥코 대전쟁',
+  '좀비고등학교': '좀비고등학교',
+  '우와 모험단': '우와 모험단',
+  '몬길: STAR DIVE': '몬길: STAR DIVE',
+  '탑 히어로즈': '탑 히어로즈',
+  '연운': '연운',
+  '라테일 플러스': '라테일 플러스',
+  '세븐 나이츠 리버스': '세븐나이츠 리버스',
+  '미르2: 레드나이트': '미르의전설2',
+  '쿠키런: 오븐스매시': '쿠키런: 오븐스매시',
+  '일곱 개의 대죄: Origin': '일곱 개의 대죄: Origin',
+  '림버스 컴퍼니': 'Limbus Company',
+  '트리 오브 세이비어: 뉴월드': '트리 오브 세이비어',
+  '소울 아이들': '소울아이들',
+  '미르2: 새왕국': '미르2 새왕국',
+  '군주의 여정': '군주의 여정',
+  '다크엔젤: 심연의 날개': '다크엔젤',
+  '천년 다시': '천년: 다시',
+  '질풍삼국': '질풍삼국',
+  '운검선경': '운검선경',
+  'ROEM': 'ROEM',
+  '무한 파이터': '무한 파이터',
+  '아스달 연대기': '아스달 연대기',
+  '소울 스트라이크': '소울 스트라이크',
+  '에픽세븐': '에픽세븐',
+  '블레이드M': '블레이드 M',
+  '영웅 얼라이언스': 'Hero Wars',
+  'SSMS': 'SSMS',
+  '드래곤의 토템': '드래곤의 토템',
+  '뱅뱅 서바이버': '뱅뱅 서바이버',
+  '콤보 히어로': '영웅일 뿐이야',
+  '젠레스 존 제로': '젠레스 존 제로',
+  '아스달 연대기': '아스달 연대기',
+  'Honor of Kings': '아너 오브 킹즈',
+  '페이블타운': 'Fable Town',
+  '로얄 킹덤': 'Royal Kingdom',
+  'MadOut2': 'MadOut2',
+  '더 그랜드 마피아': 'The Grand Mafia',
+  '리니지2 레볼루션': '리니지2 레볼루션',
+  '강림2': '강림2',
+  '데빌M': '데블M',
+  '소녀전쟁': '소녀전쟁',
+  '나자릭의 군주': '나자릭의 군주',
+  '드래곤헤어: 사일런트 갓': 'Dragonheir: Silent Gods',
+  '에코칼립스': 'EchoCalypse',
+  '매드 메탈 월드': '매드 메탈 월드',
+  '스타시드: 아스니아 트리거': '스타시드',
+  '세븐나이츠 키우기': '세븐나이츠 키우기',
+  '타리스랜드': 'Tarisland',
+  '림버스 컴퍼니': 'Limbus Company',
+  '리버스: 1999': 'Reverse: 1999',
+  '아이온2': '아이온2',
+  '나이트 크로우': '나이트 크로우',
+  '왓처 오브 렐름스': 'Watcher of Realms',
+  '마비노기 모바일': '마비노기 모바일',
+  '소녀전선2: 추방': '소녀전선2',
+  '호라이즌 워커': '호라이즌 워커',
+  '어비스 데스티니': '어비스: 데스티니',
+  '영웅 키우기': '영웅 키우기',
+  '더 라그나로크': 'THE 라그나로크',
+  '킹 오브 아발론': 'King of Avalon',
+  '미니 엠파이어': '미니 엠파이어',
+  '로맨틱 파워하우스': '로맨틱 파워하우스',
+  '고고머핀': '고고 머핀',
+  '에이스 디펜더': '에이스 디펜더',
+  '신비의 왕국': '신비의 왕국',
+  '인외지道': '인외지',
+  '좀비.io': 'Zombie.io',
+  '킹 아서: 레전드 라이즈': 'Kingshot',
+  '전설과 용: 새로운 여정': '전설과 용',
+  '일곱 개의 대죄 키우기': '일곱 개의 대죄 키우기',
+  '미니 히어로즈 리본': 'Mini Warriors Reborn',
+  '리니지2 레볼루션': '리니지2 레볼루션',
+  '고인장: 강시도사': '고인장',
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -366,36 +442,45 @@ async function collectHoyoverseCoupons() {
    iTunes Search API - 합법적 고화질 아이콘
 ═══════════════════════════════════════════════════════ */
 async function fetchItunesImage(gameName) {
-  const searchTerm = GAME_EN_NAME[gameName] || gameName;
-  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=kr&entity=software&limit=3`;
+  // 검색어 목록: 매핑된 이름 → 원본 이름 → 영문변환 시도
+  const mapped = GAME_EN_NAME[gameName] || gameName;
+  const searchTerms = [mapped];
+  if (mapped !== gameName) searchTerms.push(gameName);
+  // 콜론 제거 버전도 시도
+  const noColon = mapped.replace(/[:\s]+/g, ' ').trim();
+  if (noColon !== mapped) searchTerms.push(noColon);
 
-  try {
-    const body = await new Promise((resolve, reject) => {
-      const req = https.get(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0' }
-      }, (res) => {
-        let data = '';
-        res.setEncoding('utf8');
-        res.on('data', c => data += c);
-        res.on('end', () => resolve(data));
+  for (const searchTerm of searchTerms) {
+    try {
+      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=kr&entity=software&limit=5`;
+      const body = await new Promise((resolve, reject) => {
+        const req = https.get(url, {
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        }, (res) => {
+          let data = '';
+          res.setEncoding('utf8');
+          res.on('data', c => data += c);
+          res.on('end', () => resolve(data));
+        });
+        req.on('error', reject);
+        req.setTimeout(8000, () => { req.destroy(); reject(new Error('timeout')); });
       });
-      req.on('error', reject);
-      req.setTimeout(8000, () => { req.destroy(); reject(new Error('timeout')); });
-    });
 
-    const json = JSON.parse(body);
-    if (json.results && json.results.length > 0) {
-      const app = json.results[0];
-      // 512px 고화질 우선
-      const imageUrl = app.artworkUrl512 || app.artworkUrl100 || app.artworkUrl60;
-      console.log(`    🍎 iTunes: ${app.trackName} → ${imageUrl ? '✓' : '✗'}`);
-      return imageUrl || null;
+      const json = JSON.parse(body);
+      if (json.results && json.results.length > 0) {
+        // 게임 카테고리인 것 우선
+        const games = json.results.filter(r => r.primaryGenreName && r.primaryGenreName.toLowerCase().includes('game'));
+        const app = games.length > 0 ? games[0] : json.results[0];
+        const imageUrl = app.artworkUrl512 || app.artworkUrl100 || app.artworkUrl60;
+        console.log(`    🍎 iTunes: ${app.trackName} → ${imageUrl ? '✓' : '✗'}`);
+        if (imageUrl) return imageUrl;
+      }
+    } catch(e) {
+      // 다음 검색어로 시도
     }
-    return null;
-  } catch(e) {
-    console.log(`    ⚠️ iTunes 실패 (${gameName}): ${e.message}`);
-    return null;
   }
+  console.log(`    ✗ iTunes 이미지 없음: ${gameName}`);
+  return null;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -522,10 +607,42 @@ footer a{color:#aaa}
     </div>
   </div>
 </div>
+
+<!-- 관련 공략/뉴스 섹션 (Firebase에서 로드) -->
+<div id="gameRelated" style="max-width:800px;margin:0 auto 2rem;padding:0 1.25rem"></div>
+<script>
+(function(){
+  if(typeof firebase==='undefined') return;
+  var app2;
+  try{ app2=firebase.app('rel-${slug}'); }catch(e){ app2=firebase.initializeApp({apiKey:'AIzaSyBd0e5i2LMNtZkM1aib4kZdgjUWkzMtN7Q',authDomain:'dooood-2c725.firebaseapp.com',projectId:'dooood-2c725'},'rel-${slug}'); }
+  var db2=firebase.firestore(app2);
+  var gname='${gameName}';
+  Promise.all([
+    db2.collection('guides').where('game','==',gname).orderBy('createdAt','desc').limit(4).get(),
+    db2.collection('news').where('game','==',gname).orderBy('createdAt','desc').limit(4).get()
+  ]).then(function(results){
+    var html='';
+    var gSnap=results[0], nSnap=results[1];
+    if(!gSnap.empty){
+      html+='<div style="background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:1rem"><div style="font-size:14px;font-weight:800;color:#efefef;margin-bottom:12px">📖 '+gname+' 공략 가이드</div>';
+      gSnap.forEach(function(d){var g=d.data();html+='<a href="/guide/'+d.id+'.html" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);text-decoration:none"><span style="font-size:18px">'+(g.icon||'📖')+'</span><div><div style="font-size:13px;font-weight:600;color:#efefef">'+(g.title||'')+'</div><div style="font-size:11px;color:#aaa">'+(g.cat||'공략')+'</div></div></a>';});
+      html+='</div>';
+    }
+    if(!nSnap.empty){
+      html+='<div style="background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem"><div style="font-size:14px;font-weight:800;color:#efefef;margin-bottom:12px">📰 '+gname+' 최신 뉴스</div>';
+      nSnap.forEach(function(d){var n=d.data();html+='<a href="/news/'+d.id+'.html" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);text-decoration:none"><span style="font-size:18px">'+(n.icon||'📰')+'</span><div><div style="font-size:13px;font-weight:600;color:#efefef">'+(n.title||'')+'</div><div style="font-size:11px;color:#aaa">'+(n.date||'')+'</div></div></a>';});
+      html+='</div>';
+    }
+    if(html) document.getElementById('gameRelated').innerHTML=html;
+  }).catch(function(){});
+})();
+</script>
+
 <footer>
   <a href="/">쿠폰던전</a> &nbsp;·&nbsp;
-  <a href="/#terms">이용약관</a> &nbsp;·&nbsp;
-  <a href="/#terms">개인정보처리방침</a><br><br>
+  <a href="/about.html">소개</a> &nbsp;·&nbsp;
+  <a href="/contact.html">문의</a> &nbsp;·&nbsp;
+  <a href="/#terms">이용약관</a><br><br>
   © ${year} 쿠폰던전
 </footer>
 </body>
@@ -627,10 +744,42 @@ footer a{color:#aaa}
     </div>
   </div>
 </div>
+
+<!-- 관련 공략/뉴스 섹션 (Firebase에서 로드) -->
+<div id="gameRelated" style="max-width:800px;margin:0 auto 2rem;padding:0 1.25rem"></div>
+<script>
+(function(){
+  if(typeof firebase==='undefined') return;
+  var app2;
+  try{ app2=firebase.app('rel-${slug}'); }catch(e){ app2=firebase.initializeApp({apiKey:'AIzaSyBd0e5i2LMNtZkM1aib4kZdgjUWkzMtN7Q',authDomain:'dooood-2c725.firebaseapp.com',projectId:'dooood-2c725'},'rel-${slug}'); }
+  var db2=firebase.firestore(app2);
+  var gname='${gameName}';
+  Promise.all([
+    db2.collection('guides').where('game','==',gname).orderBy('createdAt','desc').limit(4).get(),
+    db2.collection('news').where('game','==',gname).orderBy('createdAt','desc').limit(4).get()
+  ]).then(function(results){
+    var html='';
+    var gSnap=results[0], nSnap=results[1];
+    if(!gSnap.empty){
+      html+='<div style="background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:1rem"><div style="font-size:14px;font-weight:800;color:#efefef;margin-bottom:12px">📖 '+gname+' 공략 가이드</div>';
+      gSnap.forEach(function(d){var g=d.data();html+='<a href="/guide/'+d.id+'.html" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);text-decoration:none"><span style="font-size:18px">'+(g.icon||'📖')+'</span><div><div style="font-size:13px;font-weight:600;color:#efefef">'+(g.title||'')+'</div><div style="font-size:11px;color:#aaa">'+(g.cat||'공략')+'</div></div></a>';});
+      html+='</div>';
+    }
+    if(!nSnap.empty){
+      html+='<div style="background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem"><div style="font-size:14px;font-weight:800;color:#efefef;margin-bottom:12px">📰 '+gname+' 최신 뉴스</div>';
+      nSnap.forEach(function(d){var n=d.data();html+='<a href="/news/'+d.id+'.html" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);text-decoration:none"><span style="font-size:18px">'+(n.icon||'📰')+'</span><div><div style="font-size:13px;font-weight:600;color:#efefef">'+(n.title||'')+'</div><div style="font-size:11px;color:#aaa">'+(n.date||'')+'</div></div></a>';});
+      html+='</div>';
+    }
+    if(html) document.getElementById('gameRelated').innerHTML=html;
+  }).catch(function(){});
+})();
+</script>
+
 <footer>
   <a href="/">쿠폰던전</a> &nbsp;·&nbsp;
-  <a href="/#terms">이용약관</a> &nbsp;·&nbsp;
-  <a href="/#terms">개인정보처리방침</a><br><br>
+  <a href="/about.html">소개</a> &nbsp;·&nbsp;
+  <a href="/contact.html">문의</a> &nbsp;·&nbsp;
+  <a href="/#terms">이용약관</a><br><br>
   © ${year} 쿠폰던전
 </footer>
 </body>
@@ -1007,53 +1156,95 @@ footer a{color:#aaa}
 </html>`;
 }
 
-// 인벤에서 사전예약 게임 수집
+// 사전예약 게임 자동 수집 (블루스택 + Pockettactics + 직접 정의)
 async function collectPreorderGames() {
   console.log('\n📋 사전예약 게임 자동 수집 중...');
   const games = [];
 
+  // 1. 블루스택 출시예정 페이지 수집
   try {
-    const html = await fetchUrl('https://www.inven.co.kr/webzine/schedule/');
-    // 출시 예정 게임 파싱
-    const gameRe = /<div[^>]*class="[^"]*game[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
-    const titleRe = /<(?:h[1-6]|strong|b)[^>]*>([^<]{3,30})<\/(?:h[1-6]|strong|b)>/i;
-    const dateRe = /(\d{2,4})[.\-년](\d{1,2})[.\-월](\d{0,2})/;
-
-    // 간단한 게임명 추출
-    const simpleRe = /출시예정[^"]*"[^"]*"([^"]+)"/gi;
-    let m;
-
-    // 페이지에서 날짜와 게임명 패턴 찾기
-    const lines = html.split('\n');
-    for (const line of lines) {
-      if (line.includes('출시') && line.includes('예약')) {
-        const title = line.match(titleRe);
-        const date = line.match(dateRe);
-        if (title && title[1].length > 1 && title[1].length < 30) {
-          games.push({
-            name: title[1].trim(),
-            releaseDate: date ? `${date[1]}.${String(date[2]).padStart(2,'0')}.${String(date[3]||'01').padStart(2,'0')}` : null,
-            source: '인벤',
-          });
+    const upcomingUrls = [
+      'https://www.bluestacks.com/ko/blog/upcoming-games.html',
+      'https://www.bluestacks.com/ko/blog/pre-registration-games.html',
+    ];
+    for (const url of upcomingUrls) {
+      try {
+        const html = await fetchUrl(url);
+        const re = /class="card-title[^"]*"[^>]*>\s*([^<]{3,40})\s*</gi;
+        const dateRe = /(\d{4})[년.](\d{1,2})[월.](\d{0,2})/g;
+        let m;
+        while ((m = re.exec(html)) !== null) {
+          const name = m[1].trim();
+          if (name.length > 2 && name.length < 35 && !/^[a-z\s]+$/i.test(name)) {
+            games.push({ name, source: '블루스택', releaseDate: null, genre: 'RPG' });
+          }
         }
+        await delay(500);
+      } catch(e) {}
+    }
+  } catch(e) {}
+
+  // 2. Pockettactics 어퍼커밍 게임
+  try {
+    const html = await fetchUrl('https://www.pockettactics.com/upcoming-mobile-games');
+    const re = /<h[23][^>]*>\s*<a[^>]*>([^<]{3,40})<\/a>/gi;
+    let m;
+    while ((m = re.exec(html)) !== null) {
+      const name = m[1].trim();
+      if (name.length > 2) {
+        // 한글 게임명 매핑
+        const koName = GAME_EN_NAME[name] || null;
+        games.push({ name: koName || name, nameEn: name, source: 'Pockettactics', releaseDate: null, genre: 'RPG' });
       }
     }
-  } catch(e) {
-    console.log(`  ⚠️ 인벤 수집 실패: ${e.message}`);
+    await delay(500);
+  } catch(e) { console.log(`  ⚠️ Pockettactics 수집 실패: ${e.message}`); }
+
+  // 3. 블루스택 게임 목록에서 아직 쿠폰 없고 최근 등록된 게임들
+  try {
+    const snap = await db.collection('coupons').get();
+    const gameNames = new Set();
+    snap.forEach(d => gameNames.add(d.data().game));
+    // 쿠폰이 없는 게임 중 최근 추가된 게임들을 사전예약 후보로
+    // (실제 구현: 블루스택에서 recently-added 게임들)
+    const recentHtml = await fetchUrl('https://www.bluestacks.com/ko/blog/redeem-codes.html');
+    const recentRe = /href="\/ko\/blog\/redeem-codes\/([^"]+)-redeem-codes-ko\.html"/g;
+    let m2;
+    const recentGames = [];
+    while ((m2 = recentRe.exec(recentHtml)) !== null) {
+      const slug = m2[1];
+      const koName = SLUG_TO_KO[slug];
+      if (koName && !gameNames.has(koName)) {
+        recentGames.push({ name: koName, source: '블루스택', releaseDate: null, genre: 'RPG' });
+      }
+    }
+    if (recentGames.length > 0) games.push(...recentGames.slice(0, 5));
+  } catch(e) {}
+
+  // 중복 제거
+  const uniqueGames = [];
+  const seen = new Set();
+  for (const g of games) {
+    if (!seen.has(g.name) && g.name.length > 1) {
+      seen.add(g.name);
+      uniqueGames.push(g);
+    }
   }
 
+  console.log(`  📋 수집된 사전예약 후보: ${uniqueGames.length}개`);
+
   // Firebase pending 컬렉션에 저장 (중복 제거)
-  if (games.length > 0) {
+  if (uniqueGames.length > 0) {
     try {
       const existing = await db.collection('preorders_pending').get();
       const existingNames = new Set();
       existing.forEach(d => existingNames.add(d.data().name));
 
       const approved = await db.collection('preorders').get();
-      approved.forEach(d => existingNames.add(d.data().name));
+      approved.forEach(d => existingNames.add(d.data().game || d.data().name));
 
       let added = 0;
-      for (const game of games) {
+      for (const game of uniqueGames) {
         if (!existingNames.has(game.name)) {
           await db.collection('preorders_pending').add({
             ...game,
@@ -1063,13 +1254,14 @@ async function collectPreorderGames() {
           added++;
         }
       }
-      if (added > 0) console.log(`  ✅ 사전예약 후보 ${added}개 추가 (관리자 승인 대기)`);
+      if (added > 0) console.log(`  ✅ 사전예약 후보 ${added}개 추가 → admin.html에서 승인하세요!`);
+      else console.log(`  ✅ 새 사전예약 후보 없음 (기존 ${existingNames.size}개 유지)`);
     } catch(e) {
       console.log(`  ⚠️ 사전예약 저장 실패: ${e.message}`);
     }
   }
 
-  return games;
+  return uniqueGames;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1562,10 +1754,13 @@ async function main() {
     const gSnap = await db.collection('guides').get();
     gSnap.forEach(d => {
       const guide = Object.assign({id: d.id}, d.data());
+      // doc ID를 기본 파일명으로 사용 (안정적)
+      gamePageFiles[`guide/${d.id}.html`] = buildGuidePage(guide);
+      guidesSlugs.push(d.id);
+      // 타이틀 슬러그로도 중복 생성 (기존 링크 호환성)
       const slug = toSlug(guide.title || '');
       if (slug) {
         gamePageFiles[`guide/${slug}.html`] = buildGuidePage(guide);
-        guidesSlugs.push(slug);
       }
     });
     console.log(`  📖 공략 페이지 ${guidesSlugs.length}개 생성`);
@@ -1574,10 +1769,13 @@ async function main() {
     const nSnap = await db.collection('news').get();
     nSnap.forEach(d => {
       const news = Object.assign({id: d.id}, d.data());
+      // doc ID를 기본 파일명으로 사용 (안정적)
+      gamePageFiles[`news/${d.id}.html`] = buildNewsPage(news);
+      newsSlugs.push(d.id);
+      // 타이틀 슬러그로도 중복 생성 (기존 링크 호환성)
       const slug = toSlug(news.title || '');
       if (slug) {
         gamePageFiles[`news/${slug}.html`] = buildNewsPage(news);
-        newsSlugs.push(slug);
       }
     });
     console.log(`  📰 뉴스 페이지 ${newsSlugs.length}개 생성`);
