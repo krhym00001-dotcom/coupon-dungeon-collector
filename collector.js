@@ -18,6 +18,288 @@ const SITE_URL = 'https://coupondungeon.kr';
 /* ═══════════════════════════════════════════════════════
    iTunes 게임명 → 영문 매핑
 ═══════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════
+   게임 소개 텍스트 매핑 (SEO용 게임 페이지 내용)
+═══════════════════════════════════════════════════════ */
+const GAME_INFO = {
+  '원신': {
+    desc: '호요버스가 개발한 오픈월드 액션 RPG. 7가지 원소를 활용한 전투와 광활한 테이밋 세계를 탐험하며 다양한 캐릭터를 수집·육성하는 게임입니다. 매 6주마다 새로운 버전 업데이트가 진행됩니다.',
+    tip: '쿠폰 코드는 설정 → 계정 → 교환 코드에서 입력하거나 공식 웹사이트에서도 입력할 수 있어요.',
+    genre: 'RPG', dev: '호요버스'
+  },
+  '붕괴: 스타레일': {
+    desc: '호요버스의 턴제 전략 RPG. 은하 급행열차를 타고 여러 행성을 탐험하며 다양한 캐릭터와 함께 전략적인 턴제 전투를 즐기는 게임입니다.',
+    tip: '쿠폰 코드는 HoYoLAB 앱이나 게임 내 설정에서 입력 가능합니다.',
+    genre: 'RPG', dev: '호요버스'
+  },
+  '젠레스 존 제로': {
+    desc: '호요버스의 도시 배경 액션 RPG. 홀로우라 불리는 이차원 공간을 탐험하며 다양한 에이전트를 조종해 스타일리시한 전투를 즐기는 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 인터폰 메뉴 또는 공식 웹사이트에서 입력할 수 있어요.',
+    genre: 'RPG', dev: '호요버스'
+  },
+  '명조: 워더링 웨이브': {
+    desc: '쿠로게임즈의 오픈월드 액션 RPG. 소리를 기반으로 한 독특한 세계관과 빠른 액션 전투, 파리(완벽 회피) 시스템이 특징인 게임입니다.',
+    tip: '쿠폰 코드는 공식 사이트 또는 게임 내 이벤트 메뉴에서 입력 가능합니다.',
+    genre: 'RPG', dev: '쿠로게임즈'
+  },
+  '리니지W': {
+    desc: '엔씨소프트의 MMORPG. 리니지 원작의 세계관을 모바일로 재현한 게임으로, 혈맹 전쟁과 공성전 등 대규모 PVP가 특징입니다.',
+    tip: '쿠폰 코드는 게임 내 이벤트 → 쿠폰 메뉴에서 입력할 수 있어요.',
+    genre: 'MMORPG', dev: '엔씨소프트'
+  },
+  '리니지M': {
+    desc: '엔씨소프트의 모바일 MMORPG. PC 리니지의 감성을 모바일에서 그대로 즐길 수 있으며, 혈맹과 공성전 시스템이 핵심입니다.',
+    tip: '쿠폰 코드는 게임 내 이벤트 메뉴에서 입력 가능합니다.',
+    genre: 'MMORPG', dev: '엔씨소프트'
+  },
+  '리니지2M': {
+    desc: '엔씨소프트의 리니지2 IP 기반 모바일 MMORPG. 언리얼 엔진4로 구현한 고품질 그래픽과 대규모 서버 전쟁이 특징입니다.',
+    tip: '쿠폰 코드는 게임 내 이벤트 → 쿠폰 메뉴에서 입력할 수 있어요.',
+    genre: 'MMORPG', dev: '엔씨소프트'
+  },
+  '메이플스토리M': {
+    desc: '넥슨의 횡스크롤 MMORPG. PC 메이플스토리의 감성을 모바일로 재현한 게임으로, 30개 이상의 직업과 길드 보스, 스타포스 시스템이 특징입니다.',
+    tip: '쿠폰 코드는 인벤토리 → 기타 → 쿠폰 입력 메뉴에서 입력할 수 있어요.',
+    genre: 'MMORPG', dev: '넥슨'
+  },
+  '나 혼자만 레벨업: ARISE': {
+    desc: '넷마블의 액션 RPG. 인기 웹툰·소설 원작의 게임으로 성진우를 비롯한 원작 캐릭터들을 직접 조종하며 던전을 공략하는 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 코드 입력 메뉴에서 입력 가능합니다.',
+    genre: 'RPG', dev: '넷마블'
+  },
+  '에픽세븐': {
+    desc: '스마일게이트의 턴제 RPG. 화려한 2D 애니메이션 그래픽과 다양한 영웅을 수집·육성하는 게임으로, 깊이 있는 PVP와 레이드 콘텐츠가 특징입니다.',
+    tip: '쿠폰 코드는 로비 → 메일함 → 쿠폰 교환 메뉴에서 입력할 수 있어요.',
+    genre: 'RPG', dev: '스마일게이트'
+  },
+  '블루 아카이브': {
+    desc: '넥슨/넥슨게임즈의 학원 배경 RPG. 다양한 학교 소속 학생 캐릭터들을 수집하고 총력전 레이드에 도전하는 게임입니다.',
+    tip: '쿠폰 코드는 로비 → 기타 → 쿠폰 번호 입력 메뉴에서 입력 가능합니다.',
+    genre: 'RPG', dev: '넥슨게임즈'
+  },
+  '쿠키런: 킹덤': {
+    desc: '데브시스터즈의 왕국 건설 RPG. 다양한 쿠키 캐릭터를 수집하고 왕국을 건설하며 PVP와 PVE 콘텐츠를 즐기는 게임입니다.',
+    tip: '쿠폰 코드는 메뉴 → 설정 → 쿠폰 번호 입력에서 입력할 수 있어요.',
+    genre: 'RPG', dev: '데브시스터즈'
+  },
+  '쿠키런: 모험의 탑': {
+    desc: '데브시스터즈의 모험 RPG. 쿠키런 IP를 기반으로 탑 클리어 방식의 던전 탐험 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 메뉴에서 입력 가능합니다.',
+    genre: 'RPG', dev: '데브시스터즈'
+  },
+  '쿠키런': {
+    desc: '데브시스터즈의 런닝 액션 게임. 오븐에서 탈출하는 쿠키의 달리기 모험을 담은 게임으로, 다양한 쿠키와 펫을 수집할 수 있습니다.',
+    tip: '쿠폰 코드는 게임 내 설정 메뉴에서 입력 가능합니다.',
+    genre: '캐주얼', dev: '데브시스터즈'
+  },
+  '아스달 연대기': {
+    desc: '카카오게임즈의 MMORPG. 동명의 드라마를 원작으로 한 게임으로, 고대 문명을 배경으로 한 세력 전쟁과 성장 콘텐츠가 특징입니다.',
+    tip: '쿠폰 코드는 게임 내 이벤트 → 쿠폰 메뉴에서 입력할 수 있어요.',
+    genre: 'MMORPG', dev: '카카오게임즈'
+  },
+  'AFK 저니': {
+    desc: '릴리스게임즈의 방치형 RPG. 자동으로 성장하는 편의성과 다양한 영웅 수집, 길드 전쟁 등 풍부한 콘텐츠가 특징인 게임입니다.',
+    tip: '쿠폰 코드는 아바타 클릭 → 설정 → 쿠폰 코드 입력에서 입력 가능합니다.',
+    genre: 'RPG', dev: '릴리스게임즈'
+  },
+  'Once Human': {
+    desc: '넷이즈의 오픈월드 서바이벌 슈팅 게임. 오염된 세계에서 자원을 수집하고 거점을 건설하며 생존하는 게임으로, 시즌제로 운영됩니다.',
+    tip: '쿠폰 코드는 게임 내 이벤트 → 코드 교환 메뉴에서 입력 가능합니다.',
+    genre: '서바이벌', dev: '넷이즈'
+  },
+  '왓처 오브 렐름스': {
+    desc: '게임로프트의 판타지 RPG. 다양한 영웅을 수집하고 씨족 시너지를 활용하여 전략적인 전투를 즐기는 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 교환에서 입력할 수 있어요.',
+    genre: 'RPG', dev: '게임로프트'
+  },
+  '서머너즈 워': {
+    desc: '컴투스의 턴제 RPG. 다양한 속성의 몬스터를 수집·육성하고 던전과 레이드, PVP를 즐기는 글로벌 인기 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 매직 상점 → 쿠폰 코드 입력에서 입력 가능합니다.',
+    genre: 'RPG', dev: '컴투스'
+  },
+  '림버스 컴퍼니': {
+    desc: '프로젝트문의 턴제 RPG. 독특한 세계관과 카드 배틀 시스템, 죄종 공명 메커니즘이 특징인 게임입니다.',
+    tip: '쿠폰 코드는 로비 → 공지사항 → 쿠폰 입력에서 입력할 수 있어요.',
+    genre: 'RPG', dev: '프로젝트문'
+  },
+  '리버스: 1999': {
+    desc: '버추얼뱅크의 턴제 카드 RPG. 1930~1960년대를 배경으로 카드를 합성해 강력한 스킬을 발동하는 독특한 전투 시스템이 특징입니다.',
+    tip: '쿠폰 코드는 설정 → 계정 → 교환 코드에서 입력 가능합니다.',
+    genre: 'RPG', dev: '버추얼뱅크'
+  },
+  '몬스터는 울지 않아': {
+    desc: '카카오게임즈의 방치형 RPG. 다양한 몬스터 캐릭터를 육성하고 자동 전투로 성장하는 방치형 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 메뉴에서 입력할 수 있어요.',
+    genre: 'RPG', dev: '카카오게임즈'
+  },
+  'WOS: 화이트아웃 서바이벌': {
+    desc: '센추리 게임즈의 전략 서바이벌 게임. 극한의 추위에서 기지를 건설하고 자원을 수집하며 생존하는 전략 게임입니다.',
+    tip: '쿠폰 코드는 아바타 → 설정 → 쿠폰 코드에서 입력 가능합니다.',
+    genre: '전략', dev: '센추리 게임즈'
+  },
+  '라그나로크 오리진 클래식': {
+    desc: '그라비티의 MMORPG. 원작 라그나로크 온라인의 클래식 감성을 모바일로 재현한 게임으로, 직업 시스템과 카드 수집이 특징입니다.',
+    tip: '쿠폰 코드는 게임 내 이벤트 메뉴에서 입력 가능합니다.',
+    genre: 'MMORPG', dev: '그라비티'
+  },
+  '다크엔젤: 심연의 날개': {
+    desc: '액션 RPG 게임으로 천사와 악마의 세계관을 배경으로 한 화려한 스킬과 성장 시스템이 특징입니다.',
+    tip: '쿠폰 코드는 게임 내 설정 → 쿠폰 메뉴에서 입력할 수 있어요.',
+    genre: 'RPG', dev: ''
+  },
+  '드래곤의 토템': {
+    desc: '동양 판타지를 배경으로 한 방치형 RPG. 드래곤과 함께하는 자동 성장 시스템이 특징입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 입력 메뉴에서 입력 가능합니다.',
+    genre: 'RPG', dev: ''
+  },
+  '질풍삼국': {
+    desc: '삼국지를 배경으로 한 전략 RPG. 다양한 무장을 수집하고 전략적인 전투를 즐기는 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 이벤트 → 쿠폰 메뉴에서 입력 가능합니다.',
+    genre: '전략RPG', dev: ''
+  },
+  '천년 다시': {
+    desc: '무협 배경의 MMORPG. 천년의 세계관을 기반으로 한 전통적인 무협 게임입니다.',
+    tip: '쿠폰 코드는 이벤트 → 쿠폰 교환 메뉴에서 입력할 수 있어요.',
+    genre: 'MMORPG', dev: ''
+  },
+  '연운': {
+    desc: '동양 판타지 MMORPG. 아름다운 그래픽과 무협 세계관이 특징인 모바일 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 설정 → 쿠폰 입력에서 입력 가능합니다.',
+    genre: 'MMORPG', dev: ''
+  },
+  '뱅뱅 서바이버': {
+    desc: '뱀파이어 서바이버 스타일의 방치형 슈팅 게임. 자동으로 공격하며 생존하는 중독성 있는 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 메뉴에서 입력 가능합니다.',
+    genre: '슈팅', dev: ''
+  },
+  '좀비고등학교': {
+    desc: '좀비 아포칼립스 배경의 생존 RPG. 고등학교를 배경으로 한 독특한 세계관과 수집 시스템이 특징입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 코드 입력에서 입력할 수 있어요.',
+    genre: 'RPG', dev: ''
+  },
+  '운빨존많겜': {
+    desc: '타워 디펜스 방치형 게임. 다양한 영웅을 배치해 몰려오는 적을 막는 전략적인 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 설정 → 쿠폰 입력에서 입력 가능합니다.',
+    genre: '타워디펜스', dev: ''
+  },
+  '일곱 개의 대죄: Origin': {
+    desc: '넷마블의 애니메이션 원작 RPG. 인기 애니메이션 원작의 캐릭터들을 수집하고 전략적인 전투를 즐기는 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 교환 메뉴에서 입력 가능합니다.',
+    genre: 'RPG', dev: '넷마블'
+  },
+  '레이드: 그림자의 전설': {
+    desc: '플라리움의 턴제 RPG. 700개 이상의 챔피언을 수집하고 던전과 클랜 보스에 도전하는 글로벌 인기 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 설정 → 프로모 코드에서 입력할 수 있어요.',
+    genre: 'RPG', dev: '플라리움'
+  },
+  '아스달 연대기': {
+    desc: '카카오게임즈의 드라마 원작 MMORPG. 고대 문명 배경의 세력 전쟁과 성장 시스템이 특징입니다.',
+    tip: '쿠폰 코드는 이벤트 → 쿠폰 입력 메뉴에서 입력 가능합니다.',
+    genre: 'MMORPG', dev: '카카오게임즈'
+  },
+  '소울 스트라이크': {
+    desc: '방치형 액션 RPG. 제노니아 세계관을 기반으로 한 자동 성장 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 메뉴에서 입력할 수 있어요.',
+    genre: 'RPG', dev: ''
+  },
+  '에픽세븐': {
+    desc: '스마일게이트의 턴제 RPG. 화려한 2D 애니메이션과 깊이 있는 PVP 콘텐츠가 특징입니다.',
+    tip: '쿠폰 코드는 메일함 → 쿠폰 교환에서 입력 가능합니다.',
+    genre: 'RPG', dev: '스마일게이트'
+  },
+  '소울 아이들': {
+    desc: '방치형 RPG. 다양한 영웅을 자동으로 성장시키는 편의성 높은 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 입력에서 입력할 수 있어요.',
+    genre: 'RPG', dev: ''
+  },
+  '콤보 히어로': {
+    desc: '영웅일 뿐이야 기반의 액션 RPG. 콤보 공격과 영웅 수집이 특징인 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 설정 → 쿠폰 코드에서 입력 가능합니다.',
+    genre: 'RPG', dev: ''
+  },
+  'Honor of Kings': {
+    desc: '텐센트의 5:5 MOBA 게임. 글로벌 서비스 버전의 왕자영요로, 다양한 영웅을 조종해 팀 전술 전투를 즐기는 게임입니다.',
+    tip: '쿠폰 코드는 이벤트 → 코드 교환 메뉴에서 입력 가능합니다.',
+    genre: 'MOBA', dev: '텐센트'
+  },
+  'SSMS': {
+    desc: '전략 시뮬레이션 게임으로 서버 간 전쟁과 기지 건설이 특징인 모바일 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 메뉴에서 입력할 수 있어요.',
+    genre: '전략', dev: ''
+  },
+  '블레이드M': {
+    desc: '픽셀아트 스타일의 액션 RPG. 레트로 감성의 그래픽과 빠른 전투가 특징인 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 설정 → 쿠폰 입력에서 입력 가능합니다.',
+    genre: 'RPG', dev: ''
+  },
+  'ROEM': {
+    desc: '패션과 스타일을 테마로 한 캐주얼 게임입니다.',
+    tip: '쿠폰 코드는 이벤트 메뉴에서 입력할 수 있어요.',
+    genre: '캐주얼', dev: ''
+  },
+  '영웅 얼라이언스': {
+    desc: '넥스트 게임즈의 방치형 RPG. 다양한 영웅을 수집하고 자동으로 성장시키는 글로벌 인기 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 프로모 코드에서 입력 가능합니다.',
+    genre: 'RPG', dev: '넥스트 게임즈'
+  },
+  '군주의 여정': {
+    desc: '전략 RPG 게임으로 왕국을 건설하고 전쟁을 통해 세력을 확장하는 게임입니다.',
+    tip: '쿠폰 코드는 이벤트 → 쿠폰 교환에서 입력할 수 있어요.',
+    genre: '전략', dev: ''
+  },
+  '미르2: 새왕국': {
+    desc: '미르의 전설2를 기반으로 한 MMORPG. 원작의 감성을 살린 전통적인 무협 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 이벤트 메뉴에서 입력 가능합니다.',
+    genre: 'MMORPG', dev: ''
+  },
+  '미르2: 레드나이트': {
+    desc: '미르의 전설2 기반의 MMORPG. 레드나이트 세계관을 배경으로 한 모바일 게임입니다.',
+    tip: '쿠폰 코드는 이벤트 → 쿠폰 입력에서 입력할 수 있어요.',
+    genre: 'MMORPG', dev: ''
+  },
+  '마피아 모바일': {
+    desc: '도시 건설과 마피아 전략을 결합한 전략 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 코드에서 입력 가능합니다.',
+    genre: '전략', dev: ''
+  },
+  '무한 파이터': {
+    desc: '방치형 액션 RPG로 궁수 영웅을 키워나가는 게임입니다.',
+    tip: '쿠폰 코드는 이벤트 메뉴에서 입력할 수 있어요.',
+    genre: 'RPG', dev: ''
+  },
+  '운검선경': {
+    desc: '동양 무협 배경의 MMORPG. 무협 세계관과 다양한 직업 시스템이 특징입니다.',
+    tip: '쿠폰 코드는 게임 내 이벤트 → 쿠폰 메뉴에서 입력 가능합니다.',
+    genre: 'MMORPG', dev: ''
+  },
+  '고고머핀': {
+    desc: '캐주얼 방치형 게임으로 귀여운 캐릭터와 함께하는 성장 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 입력에서 입력할 수 있어요.',
+    genre: '캐주얼', dev: ''
+  },
+  'foundation': {
+    desc: '전략 건설 게임으로 중세 도시를 건설하고 발전시키는 시뮬레이션 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 설정에서 입력 가능합니다.',
+    genre: '전략', dev: ''
+  },
+  'Last Z: 서바이벌 슈터': {
+    desc: '좀비 아포칼립스 배경의 서바이벌 슈팅 게임입니다.',
+    tip: '쿠폰 코드는 이벤트 → 쿠폰 메뉴에서 입력할 수 있어요.',
+    genre: '슈팅', dev: ''
+  },
+  '트리 오브 세이비어: 뉴월드': {
+    desc: 'IMC 게임즈의 MMORPG. 트리 오브 세이비어 IP를 기반으로 한 모바일 게임입니다.',
+    tip: '쿠폰 코드는 게임 내 설정 → 쿠폰 입력에서 입력 가능합니다.',
+    genre: 'MMORPG', dev: 'IMC 게임즈'
+  },
+  '매드 메탈 월드': {
+    desc: '포스트 아포칼립스 배경의 전략 게임입니다.',
+    tip: '쿠폰 코드는 설정 → 쿠폰 메뉴에서 입력할 수 있어요.',
+    genre: '전략', dev: ''
+  },
+};
+
 const GAME_EN_NAME = {
   // 한국 앱스토어 등록명 기준 (한글 검색이 더 정확한 게임들)
   '원신': '원신',
@@ -827,13 +1109,38 @@ footer a{color:#aaa}
 /* ═══════════════════════════════════════════════════════
    HTML 템플릿 — 게임 전용 페이지
 ═══════════════════════════════════════════════════════ */
-function buildGamePage(gameName, coupons, imageUrl, genre) {
+function buildGamePage(gameName, coupons, imageUrl, genre, relatedGuides = [], relatedNews = []) {
   const slug = toSlug(gameName);
   const year = new Date().getFullYear();
   const today = new Date().toLocaleDateString('ko-KR');
   const couponCount = coupons.length;
   const activeCoupons = coupons.filter(c => !c.expire || c.expire === '무기한' || new Date(c.expire.replace(/\./g,'-')) > new Date());
   const expiredCoupons = coupons.filter(c => c.expire && c.expire !== '무기한' && new Date(c.expire.replace(/\./g,'-')) <= new Date());
+  const gameInfo = GAME_INFO[gameName] || {};
+  const gameDesc = gameInfo.desc || `${gameName}의 최신 쿠폰 코드를 확인하세요.`;
+  const gameTip = gameInfo.tip || '게임 내 설정 또는 이벤트 메뉴에서 쿠폰 코드를 입력할 수 있어요.';
+
+  // 정적 공략 HTML 생성
+  const staticGuides = relatedGuides.length > 0 ? `
+  <div style="background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+    <div style="font-size:14px;font-weight:800;color:#efefef;margin-bottom:12px">📖 ${gameName} 공략 가이드</div>
+    ${relatedGuides.map(g => `<a href="/guide/${g.id}.html" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);text-decoration:none">
+      <span style="font-size:20px">${g.icon||'📖'}</span>
+      <div><div style="font-size:13px;font-weight:600;color:#efefef">${g.title||''}</div>
+      <div style="font-size:11px;color:#aaa">${g.cat||'공략'} · ${g.game||''}</div></div>
+    </a>`).join('')}
+  </div>` : '';
+
+  // 정적 뉴스 HTML 생성
+  const staticNews = relatedNews.length > 0 ? `
+  <div style="background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+    <div style="font-size:14px;font-weight:800;color:#efefef;margin-bottom:12px">📰 ${gameName} 최신 뉴스</div>
+    ${relatedNews.map(n => `<a href="/news/${n.id}.html" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);text-decoration:none">
+      <span style="font-size:20px">${n.icon||'📰'}</span>
+      <div><div style="font-size:13px;font-weight:600;color:#efefef">${n.title||''}</div>
+      <div style="font-size:11px;color:#aaa">${n.date||''}</div></div>
+    </a>`).join('')}
+  </div>` : '';
 
   const schemaData = {
     "@context": "https://schema.org",
@@ -989,8 +1296,22 @@ footer a{color:#aaa}
   <div class="section-title">📋 쿠폰 입력 방법</div>
   <div class="how-box">
     <div class="how-title">🎮 ${gameName} 쿠폰 입력하는 방법</div>
-    <div class="how-text">위의 쿠폰 코드를 복사한 후, 게임 내 설정 메뉴 또는 공식 홈페이지 쿠폰 입력란에 붙여넣기 하세요. 코드는 대소문자를 구분하며, 계정당 1회만 사용 가능합니다.</div>
+    <div class="how-text">${gameTip}</div>
+    <div class="how-text" style="margin-top:8px;color:#aaa;font-size:12px">위의 쿠폰 코드를 복사한 후 입력하세요. 코드는 대소문자를 구분하며, 계정당 1회만 사용 가능합니다.</div>
   </div>
+
+  <!-- 게임 소개 -->
+  <div class="section-title">🎮 ${gameName} 게임 소개</div>
+  <div style="background:#13131f;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+    <p style="font-size:14px;color:#ccc;line-height:1.9">${gameDesc}</p>
+    ${gameInfo.dev ? `<p style="font-size:12px;color:#555;margin-top:8px">개발사: ${gameInfo.dev}</p>` : ''}
+  </div>
+
+  <!-- 관련 공략 (정적 포함 - SEO) -->
+  ${staticGuides}
+
+  <!-- 관련 뉴스 (정적 포함 - SEO) -->
+  ${staticNews}
 
   <div class="section-title">❓ 자주 묻는 질문</div>
   <div class="faq-item">
@@ -1771,6 +2092,25 @@ async function main() {
   const gamePageFiles = {};
   const gamePageSlugs = [];
 
+  // 공략/뉴스 미리 로드 (게임 페이지에 정적으로 포함하기 위해)
+  const allGuides = {};
+  const allNews = {};
+  try {
+    const gAll = await db.collection('guides').orderBy('createdAt','desc').get();
+    gAll.forEach(d => {
+      const g = Object.assign({id: d.id}, d.data());
+      if (!allGuides[g.game]) allGuides[g.game] = [];
+      if (allGuides[g.game].length < 4) allGuides[g.game].push(g);
+    });
+    const nAll = await db.collection('news').orderBy('createdAt','desc').get();
+    nAll.forEach(d => {
+      const n = Object.assign({id: d.id}, d.data());
+      if (!allNews[n.game]) allNews[n.game] = [];
+      if (allNews[n.game].length < 4) allNews[n.game].push(n);
+    });
+    console.log(`  📚 공략 ${gAll.size}개, 뉴스 ${nAll.size}개 로드 완료`);
+  } catch(e) { console.log('  ⚠️ 공략/뉴스 로드 실패:', e.message); }
+
   let guidesSlugs = [], newsSlugs = [];
   try {
     // 사전예약 정적 페이지 생성
@@ -1849,7 +2189,7 @@ async function main() {
 
       const slug = toSlug(gameName);
       if (slug) {
-        gamePageFiles[`game/${slug}.html`] = buildGamePage(gameName, validCoupons, imageUrl, genre);
+        gamePageFiles[`game/${slug}.html`] = buildGamePage(gameName, validCoupons, imageUrl, genre, allGuides[gameName]||[], allNews[gameName]||[]);
         gamePageSlugs.push(slug);
       }
 
